@@ -1,0 +1,6 @@
+# dependencies (Phaser is loaded via CDN today; this is for later)
+node_modules/
+
+# os / editor cruft
+.DS_Store
+*.log

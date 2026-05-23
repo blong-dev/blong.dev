@@ -4,24 +4,26 @@
 //  Each sprite is a grid of single characters. Each character
 //  maps to a color in PALETTE below. '.' = transparent.
 //  RULE: every row in a grid MUST be the same length.
-//  Colors render as crisp pixels (each cell = 3x3 screen px).
-//  Add a new sprite by adding a key to SPRITES, then use that
-//  key as a texture in game.js.
+//  Heroes are drawn in PROFILE, FACING RIGHT — the game flips
+//  them for left (sprite.setFlipX). Let each animal's signature
+//  feature (ear/snout, beak, ear/trunk, horns) lead the silhouette.
+//  Heroes render at 4px per cell (see CELLS); add new sprites by
+//  adding a key here and using it as a texture in game.js.
 // ============================================================
 
 const PALETTE = {
   '.': null,        // transparent
   'O': 0x241803,    // outline (near-black)
   'F': 0xf8a838,    // calico orange fur
-  'W': 0xfdfdfd,    // white
-  'P': 0xf070a0,    // pink  (nose / inner ear)
-  'G': 0x28b828,    // green tunic
-  'S': 0xf8c89c,    // skin / peach
-  'K': 0x43321c,    // dark brown (boots / hooves)
+  'W': 0xfdfdfd,    // white (muzzle / horn / belly)
+  'P': 0xf070a0,    // pink  (nose / beak underside)
+  'G': 0x28b828,    // green tunic (legacy)
+  'S': 0xf8c89c,    // skin / peach (legacy)
+  'K': 0x43321c,    // dark brown (feet / hooves)
   'B': 0x8a5018,    // horn brown
   'H': 0xd8b878,    // satyr fur (tan)
   'R': 0xe02810,    // red vest
-  'Y': 0xfcd400,    // gold
+  'Y': 0xfcd400,    // gold / beak
   'y': 0xb88600,    // dark gold edge
   'b': 0x3c78f8,    // jay blue
   'a': 0xb0b0c0,    // larry gray
@@ -30,160 +32,159 @@ const PALETTE = {
   'X': 0x000000,    // armor outline (black)
 };
 
-// These are the UNARMORED ("basic") sprites. Each character will also
-// get an _armored variant later (e.g. calico_armored) for the G'n'G
-// armor state — same grid with armor pixels added. Add those as new keys.
+// Heroes come in two states: UNARMORED (naked, full fur color) and
+// _armored (head kept colored, body recolored grey). All profile, facing right.
 const SPRITES = {
-  // ---- Heroes, UNARMORED ("naked"): full body in the fur/head color, no clothes ----
-  // Calico — cat lady (orange)
+  // ---- Calico — cat, profile: pointed ear up, snout + pink nose forward ----
   calico: [
-    '..O......O..',
-    '.OFO....OFO.',
-    '.OFFO..OFFO.',
-    '.OFFFFFFFFO.',
-    '.OWWWWWWWWO.',
-    '.OWOWWWWOWO.',
-    '.OWWWPPWWWO.',
-    '.OFWWWWWWFO.',
-    '..OFFFFFFO..',
-    '..OFFFFFFO..',
-    '.OFFFFFFFFO.',
-    '.OFFFFFFFFO.',
-    '..OFFFFFFO..',
-    '..OFFOOFFO..',
-    '..OFFOOFFO..',
-    '..OFFOOFFO..',
+    '...O........',
+    '...FO.......',
+    '..OOFO......',
+    '..OFFFF.....',
+    '..OFFOFFO...',
+    '..OFFOFWWP..',
+    '..OFFFFWWW..',
+    '..OFFFFFO...',
+    'F..OFFFFO...',
+    'F.OFFFFFFO..',
+    '.FOFOFFFFO..',
+    '.FOFOFFFFO..',
+    '..FOOFFFO...',
+    '..OFFOFFO...',
+    '..OFFOFFO...',
+    '..OKKOKKO...',
   ],
-  // Jay — bird man (blue, yellow beak)
-  jay: [
-    '......b.....',
-    '....ObObO...',
-    '..ObbbbbbO..',
-    '.ObbbbbbbbO.',
-    '.OWWWWWWWWO.',
-    '.OWOWYWWOWO.',
-    '.OWWWYYYYYO.',
-    '.ObWWYYYWbO.',
-    '..ObbYbbbO..',
-    '..ObbbbbbO..',
-    '.ObbbbbbbbO.',
-    '.ObbbbbbbbO.',
-    '..ObbbbbbO..',
-    '..ObbOObbO..',
-    '..ObbOObbO..',
-    '..ObbOObbO..',
-  ],
-  // Larry — elephant man (gray)
-  larry: [
-    '...OaaaaO...',
-    'OaaOaaaaOaaO',
-    'OaaOaaaaOaaO',
-    'OaaOWWWWOaaO',
-    'OaaOWOOWOaaO',
-    '.OaOWWWWOaO.',
-    '..OOWWWWOO..',
-    '...OaaaaO...',
-    '....OaaO....',
-    '..OaaaaaaO..',
-    '.OaaaaaaaaO.',
-    '.OaaaaaaaaO.',
-    '..OaaaaaaO..',
-    '..OaaOOaaO..',
-    '..OaaOOaaO..',
-    '..OaaOOaaO..',
-  ],
-  // Betsy — triceratops lady (dino-green)
-  betsy: [
-    '..W.OOOO.W..',
-    '.OWOddddOWO.',
-    'OddddddddddO',
-    'OddddddddddO',
-    '.OddWWWWddO.',
-    '.OdWOWWOWdO.',
-    '..OWWWWWWO..',
-    '..OWWPPWWO..',
-    '..OddddddO..',
-    '..OddddddO..',
-    '.OddddddddO.',
-    '.OddddddddO.',
-    '..OddddddO..',
-    '..OddOOddO..',
-    '..OddOOddO..',
-    '..OddOOddO..',
+  calico_armored: [
+    '...O........',
+    '...FO.......',
+    '..OOFO......',
+    '..OFFFF.....',
+    '..OFFOFFO...',
+    '..OFFOFWWP..',
+    '..OFFFFWWW..',
+    '..OFFFFFO...',
+    'F..OmmmmO...',
+    'F.OmmmmmmO..',
+    '.FOmOmmmmO..',
+    '.FOmOmmmmO..',
+    '..FOOmmmO...',
+    '..OmmOmmO...',
+    '..OmmOmmO...',
+    '..OKKOKKO...',
   ],
 
-  // ---- Heroes, ARMORED: head kept colored, body recolored gray (m), outline kept ----
-  calico_armored: [
-    '..O......O..',
-    '.OFO....OFO.',
-    '.OFFO..OFFO.',
-    '.OFFFFFFFFO.',
-    '.OWWWWWWWWO.',
-    '.OWOWWWWOWO.',
-    '.OWWWPPWWWO.',
-    '.OFWWWWWWFO.',
-    '..OFFFFFFO..',
-    '..OmmmmmmO..',
-    '.OmmmmmmmmO.',
-    '.OmmmmmmmmO.',
-    '..OmmmmmmO..',
-    '..OmmOOmmO..',
-    '..OmmOOmmO..',
-    '..OmmOOmmO..',
+  // ---- Jay — bird, profile: crest up, yellow beak forward ----
+  jay: [
+    '...O........',
+    '...bO.......',
+    '..OObO......',
+    '..ObbbbO....',
+    '..ObbObYO...',
+    '..ObbObYYYY.',
+    '..ObbbbbYY..',
+    '...ObbbbO...',
+    '...ObbbbO...',
+    '..ObbbObbO..',
+    'ObObbObbbO..',
+    'bbObObbbbO..',
+    '.bbObbbbO...',
+    '..ObbObbO...',
+    '..ObbObbO...',
+    '..OKKOKKO...',
   ],
   jay_armored: [
-    '......b.....',
-    '....ObObO...',
-    '..ObbbbbbO..',
-    '.ObbbbbbbbO.',
-    '.OWWWWWWWWO.',
-    '.OWOWYWWOWO.',
-    '.OWWWYYYYYO.',
-    '.ObWWYYYWbO.',
-    '..ObbYbbbO..',
-    '..OmmmmmmO..',
-    '.OmmmmmmmmO.',
-    '.OmmmmmmmmO.',
-    '..OmmmmmmO..',
-    '..OmmOOmmO..',
-    '..OmmOOmmO..',
-    '..OmmOOmmO..',
+    '...O........',
+    '...bO.......',
+    '..OObO......',
+    '..ObbbbO....',
+    '..ObbObYO...',
+    '..ObbObYYYY.',
+    '..ObbbbbYY..',
+    '...ObbbbO...',
+    '...OmmmmO...',
+    '..OmmmOmmO..',
+    'ObOmmOmmmO..',
+    'bbOmOmmmmO..',
+    '.bbOmmmmO...',
+    '..OmmOmmO...',
+    '..OmmOmmO...',
+    '..OKKOKKO...',
+  ],
+
+  // ---- Larry — elephant, profile: big ear back, trunk forward/down ----
+  larry: [
+    '.OOOO.......',
+    'OaaaOaaO....',
+    'OaaaaaaaO...',
+    'OaaaaOaaO...',
+    'OaaaaaaaO...',
+    'OaaaaaOaa...',
+    'OaaOaaOaa...',
+    'OaOaaaaOaO..',
+    '.O.OaaaOaa..',
+    '..OaaaaaO...',
+    '..OaaOaaaO..',
+    '.aOaaOaaaO..',
+    '..aOOaaaaO..',
+    '..OaaOaaO...',
+    '..OaaOaaO...',
+    '..OKKOKKO...',
   ],
   larry_armored: [
-    '...OaaaaO...',
-    'OaaOaaaaOaaO',
-    'OaaOaaaaOaaO',
-    'OaaOWWWWOaaO',
-    'OaaOWOOWOaaO',
-    '.OaOWWWWOaO.',
-    '..OOWWWWOO..',
-    '...OaaaaO...',
-    '....OaaO....',
-    '..OmmmmmmO..',
-    '.OmmmmmmmmO.',
-    '.OmmmmmmmmO.',
-    '..OmmmmmmO..',
-    '..OmmOOmmO..',
-    '..OmmOOmmO..',
-    '..OmmOOmmO..',
+     '.OOOO.......',
+    'OaaaOaaO....',
+    'OaaaaaaaO...',
+    'OaaaaOaaO...',
+    'OaaaaaaaO...',
+    'OaaaaaOaa...',
+    'OaaOaaOaa...',
+    'OaOaaaaOaO..',
+    '.O.OmmmOaa..',
+    '..OmmmmmO...',
+    '..OmmOmmmO..',
+    '.aOmmOmmmO..',
+    '..aOOmmmmO..',
+    '..OmmOmmO...',
+    '..OmmOmmO...',
+    '..OKKOKKO...',
+  ],
+
+  // ---- Betsy — triceratops, profile: frill back, horn + beak forward ----
+  betsy: [
+    'Od..........',
+    'Oddd.W......',
+    'ddddWW......',
+    'ddddddd.W...',
+    '.dddOddWW...',
+    '..OddddWdP..',
+    '..OddddddO..',
+    '...dddddO...',
+    '...OOdddO...',
+    '..OddddddO..',
+    '..OddddddO..',
+    '.dOddOdddO..',
+    'dddOOdddO...',
+    '..OddOddO...',
+    '..OddOddO...',
+    '..OKKOKKO...',
   ],
   betsy_armored: [
-    '..W.OOOO.W..',
-    '.OWOddddOWO.',
-    'OddddddddddO',
-    'OddddddddddO',
-    '.OddWWWWddO.',
-    '.OdWOWWOWdO.',
-    '..OWWWWWWO..',
-    '..OWWPPWWO..',
+    'Od..........',
+    'Oddd.W......',
+    'ddddWW......',
+    'ddddddd.W...',
+    '.dddOddWW...',
+    '..OddddWdP..',
     '..OddddddO..',
+    '...dddddO...',
+    '...OOmmmO...',
     '..OmmmmmmO..',
-    '.OmmmmmmmmO.',
-    '.OmmmmmmmmO.',
     '..OmmmmmmO..',
-    '..OmmOOmmO..',
-    '..OmmOOmmO..',
-    '..OmmOOmmO..',
+    '.dOmmOmmmO..',
+    'dddOOmmmO...',
+    '..OmmOmmO...',
+    '..OmmOmmO...',
+    '..OKKOKKO...',
   ],
 
   // Roq — the satyr (12 x 18): brown horns, beard, red vest, furry legs, hooves
@@ -195,8 +196,8 @@ const SPRITES = {
     '.OSOSSSSOSO.',
     '.OmmmPPmmmO.',
     '..OmmWWmmO..',
-    '..OHHHHHHO..',
-    '...OHHHHO...',
+    '..OmmmmmmO..',
+    '...OmmmmO...',
     '..ORRRRRRO..',
     '.OSRRRRRRSO.',
     '.OSRRRRRRSO.',

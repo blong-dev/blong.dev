@@ -153,6 +153,7 @@ class PlayScene extends Phaser.Scene {
     if(this.cursors.left.isDown){ b.setVelocityX(-speed); this.facing = -1; }
     else if(this.cursors.right.isDown){ b.setVelocityX(speed); this.facing = 1; }
     else b.setVelocityX(0);
+    this.player.setFlipX(this.facing < 0); // profile sprite faces the way you move/attack
 
     const onGround = b.blocked.down || b.touching.down;
     if(Phaser.Input.Keyboard.JustDown(this.keySpace) && onGround)

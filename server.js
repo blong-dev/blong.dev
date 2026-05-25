@@ -1,7 +1,8 @@
 // Zero-dependency static server for the Port Foliopolis greybox.
 const http = require('http'), fs = require('fs'), path = require('path');
 const ROOT = __dirname, PORT = 8173;
-const TYPES = { '.html':'text/html', '.js':'text/javascript', '.css':'text/css', '.json':'application/json' };
+const TYPES = { '.html':'text/html', '.js':'text/javascript', '.css':'text/css', '.json':'application/json',
+                '.png':'image/png', '.gif':'image/gif', '.jpg':'image/jpeg', '.jpeg':'image/jpeg', '.webp':'image/webp' };
 
 http.createServer((req, res) => {
   let p = decodeURIComponent(req.url.split('?')[0]);

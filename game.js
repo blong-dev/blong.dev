@@ -15,12 +15,25 @@ const PAL = {
 
 class BootScene extends Phaser.Scene {
   constructor(){ super('boot'); }
+  preload(){
+    const PA = 'assets/pixel-adventure/';
+    this.load.image('pa_bg',    PA + 'bg_green.png');
+    this.load.image('pa_grass', PA + 'grass.png');
+    this.load.image('pa_dirt',  PA + 'dirt.png');
+    ['ninja','pink','mask','virtual'].forEach(c => {
+      ['idle','run','jump','fall'].forEach(a => {
+        this.load.spritesheet(`${c}_${a}`, PA + `${c}_${a}.png`, { frameWidth:96, frameHeight:96 });
+      });
+    });
+  }
   create(){
     buildAllTextures(this);
-    console.log('[boot] textures —',
-      'calico:', this.textures.exists('calico'),
-      'roq:', this.textures.exists('roq'),
-      'coin:', this.textures.exists('coin'));
+    ['ninja','pink','mask','virtual'].forEach(c => {
+      this.anims.create({ key:`${c}-idle`, frames:this.anims.generateFrameNumbers(`${c}_idle`), frameRate:20, repeat:-1 });
+      this.anims.create({ key:`${c}-run`,  frames:this.anims.generateFrameNumbers(`${c}_run`),  frameRate:20, repeat:-1 });
+      this.anims.create({ key:`${c}-jump`, frames:this.anims.generateFrameNumbers(`${c}_jump`), frameRate:1 });
+      this.anims.create({ key:`${c}-fall`, frames:this.anims.generateFrameNumbers(`${c}_fall`), frameRate:1 });
+    });
     this.scene.start('title');
   }
 }
@@ -29,6 +42,9 @@ class TitleScene extends Phaser.Scene {
   constructor(){ super('title'); }
   create(){
     this.cameras.main.setBackgroundColor(PAL.sky);
+    this.add.tileSprite(0, 0, W, H, 'pa_bg').setOrigin(0).setDepth(-10);
+    this.add.tileSprite(0, 348, W, 48, 'pa_grass').setOrigin(0).setDepth(-9);
+    this.add.tileSprite(0, 396, W, H - 396, 'pa_dirt').setOrigin(0).setDepth(-9);
     this.add.text(W/2, 80, 'PORT FOLIOPOLIS\nNEEDS YOUR HELP!',
       {fontFamily:'monospace', fontSize:'34px', color:'#ffffff', align:'center', fontStyle:'bold'})
       .setOrigin(0.5).setStroke('#202020', 6);
@@ -36,24 +52,20 @@ class TitleScene extends Phaser.Scene {
       {fontFamily:'monospace', fontSize:'20px', color:'#202020'}).setOrigin(0.5);
 
     const heroes = [
-      {name:'Calico', color:PAL.calico, key:'calico'},
-      {name:'Jay',    color:PAL.jay,    key:'jay'},
-      {name:'Larry',  color:PAL.larry,  key:'larry'},
-      {name:'Betsy',  color:PAL.betsy,  key:'betsy'},
+      {name:'Calico', char:'pink'},
+      {name:'Jay',    char:'ninja'},
+      {name:'Larry',  char:'mask'},
+      {name:'Betsy',  char:'virtual'},
     ];
     heroes.forEach((h,i)=>{
-      const x = W/2 + (i-1.5)*130;
-      let obj;
-      if (this.textures.exists(h.key)) {
-        obj = this.add.image(x, 300, h.key).setScale(1.2).setInteractive({useHandCursor:true});
-      } else {
-        obj = this.add.rectangle(x, 300, 58, 84, h.color)
-          .setStrokeStyle(3, PAL.dark).setInteractive({useHandCursor:true});
-        obj.on('pointerover', ()=> obj.setStrokeStyle(5, PAL.red));
-        obj.on('pointerout',  ()=> obj.setStrokeStyle(3, PAL.dark));
-      }
-      this.add.text(x, 362, h.name, {fontFamily:'monospace', fontSize:'16px', color:'#202020'}).setOrigin(0.5);
-      obj.on('pointerdown', ()=> this.scene.start('play', {color:h.color, name:h.name, key:h.key}));
+      const x = W/2 + (i-1.5)*160;
+      const spr = this.add.sprite(x, 290, `${h.char}_idle`).setScale(1.2).setInteractive({useHandCursor:true});
+      spr.play(`${h.char}-idle`);
+      this.add.text(x, 408, h.name, {fontFamily:'monospace', fontSize:'18px', color:'#ffffff'})
+        .setOrigin(0.5).setStroke('#202020', 4);
+      spr.on('pointerover', ()=> spr.setScale(1.38));
+      spr.on('pointerout',  ()=> spr.setScale(1.2));
+      spr.on('pointerdown', ()=> this.scene.start('play', {name:h.name, char:h.char}));
     });
     this.add.text(W/2, H-28, '←→ move  ·  space jump  ·  A attack  ·  S speak  ·  ↑↓ ladders',
       {fontFamily:'monospace', fontSize:'13px', color:'#202020'}).setOrigin(0.5);
@@ -62,15 +74,20 @@ class TitleScene extends Phaser.Scene {
 
 class PlayScene extends Phaser.Scene {
   constructor(){ super('play'); }
-  init(data){ this.heroColor = data.color || PAL.calico; this.heroName = data.name || 'Calico'; this.heroKey = data.key || 'calico'; }
+  init(data){ this.heroName = data.name || 'Calico'; this.heroChar = data.char || 'ninja'; }
   create(){
-    const WORLD_W = 3200, GROUND_TOP = H - 48;
+    const WORLD_W = 3200, GROUND_TOP = 410;  // sits on the painted grass line
     this.cameras.main.setBackgroundColor(PAL.sky);
     this.physics.world.setBounds(0, -200, WORLD_W, H + 200);
     this.cameras.main.setBounds(0, 0, WORLD_W, H);
 
-    // ground
-    const ground = this.add.rectangle(WORLD_W/2, GROUND_TOP + 24, WORLD_W, 48, PAL.grass);
+    // --- meadow (Pixel Adventure by Pixel Frog, CC0) ---
+    this.add.tileSprite(0, 0, W, H, 'pa_bg').setOrigin(0).setScrollFactor(0).setDepth(-20);
+    this.add.tileSprite(0, GROUND_TOP, WORLD_W, 48, 'pa_grass').setOrigin(0).setDepth(-6);
+    this.add.tileSprite(0, GROUND_TOP + 48, WORLD_W, H - GROUND_TOP - 48, 'pa_dirt').setOrigin(0).setDepth(-6);
+
+    // invisible collision ground at the grass surface
+    const ground = this.add.rectangle(WORLD_W/2, GROUND_TOP + 24, WORLD_W, 48, PAL.grass).setVisible(false);
     this.physics.add.existing(ground, true);
 
     // zone labels + a town dirt strip
@@ -85,18 +102,16 @@ class PlayScene extends Phaser.Scene {
     roqPlat.body.checkCollision.down = false;
     roqPlat.body.checkCollision.left = false;
     roqPlat.body.checkCollision.right = false;
-    if (this.textures.exists('roq')) this.add.image(1700, platY - 25, 'roq');
+    if (this.textures.exists('roq')) this.add.image(1700, platY - 43, 'roq');
     else this.add.rectangle(1700, platY - 38, 38, 56, PAL.roq).setStrokeStyle(3, PAL.dark);
-    this.add.text(1700, platY - 52, 'ROQ', {fontFamily:'monospace', fontSize:'13px', color:'#202020'}).setOrigin(0.5);
+    this.add.text(1700, platY - 82, 'ROQ', {fontFamily:'monospace', fontSize:'13px', color:'#202020'}).setOrigin(0.5);
 
-    // player — falls in from above (the drop-in)
-    this.armored = true;  // you start in armor (G'n'G)
-    const armoredKey = this.heroKey + '_armored';
-    const pkey = this.textures.exists(armoredKey) ? armoredKey
-               : (this.textures.exists(this.heroKey) ? this.heroKey : 'calico');
-    this.player = this.physics.add.sprite(120, -120, pkey);
+    // player — the selected Pixel Adventure character, animated (anims built in BootScene)
+    this.player = this.physics.add.sprite(120, -120, `${this.heroChar}_idle`);
+    this.player.body.setSize(69, 72).setOffset(12, 24);   // tight hitbox around the character
     this.player.body.setCollideWorldBounds(true);
     this.player.body.setMaxVelocity(210, 920);
+    this.player.play(`${this.heroChar}-idle`);
     this.physics.add.collider(this.player, ground);
     this.physics.add.collider(this.player, roqPlat);
     this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
@@ -133,12 +148,12 @@ class PlayScene extends Phaser.Scene {
     this.attackElapsed = 0;
     this.FRAME_MS = 55;
     this.SWING = [
-      { dx: 2,  dy: -34, ang: 0   },  // overhead (blade up)
-      { dx: 16, dy: -26, ang: 45  },  // diagonal
-      { dx: 26, dy: -6,  ang: 90  },  // horizontal, out front
-      { dx: 22, dy: 12,  ang: 125 },  // down-front (follow-through)
+      { dx: 6,  dy: -54, ang: 0   },  // overhead (blade up)
+      { dx: 30, dy: -40, ang: 45  },  // diagonal
+      { dx: 50, dy: -8,  ang: 90  },  // horizontal, out front
+      { dx: 42, dy: 22,  ang: 125 },  // down-front (follow-through)
     ];
-    this.sword = this.add.rectangle(0, 0, 12, 50, 0xffffff, 0.95)
+    this.sword = this.add.rectangle(0, 0, 20, 84, 0xffffff, 0.95)
       .setStrokeStyle(2, PAL.red).setVisible(false);
   }
 
@@ -159,12 +174,11 @@ class PlayScene extends Phaser.Scene {
     if(Phaser.Input.Keyboard.JustDown(this.keySpace) && onGround)
       b.setVelocityY(-622); // space only — up/down are reserved for ladders, not jump
     if(Phaser.Input.Keyboard.JustDown(this.keyA)) this.doAttack();
-    if(Phaser.Input.Keyboard.JustDown(this.keyArmor)){
-      this.armored = !this.armored;
-      const k = this.armored ? this.heroKey + '_armored' : this.heroKey;
-      if(this.textures.exists(k)) this.player.setTexture(k);
-      this.armorText.setText(this.armored ? '[ ARMOR ]' : '[ no armor ]');
-    }
+    // animation state
+    const hc = this.heroChar;
+    if(!onGround) this.player.play(b.velocity.y < 0 ? `${hc}-jump` : `${hc}-fall`, true);
+    else if(this.cursors.left.isDown || this.cursors.right.isDown) this.player.play(`${hc}-run`, true);
+    else this.player.play(`${hc}-idle`, true);
 
     // drive the swing — recomputed from the hero's CURRENT position each frame, so it stays attached
     if(this.attacking){

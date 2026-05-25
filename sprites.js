@@ -30,6 +30,9 @@ const PALETTE = {
   'd': 0x58c838,    // betsy dino-green
   'm': 0x9090a0,    // armor grey
   'X': 0x000000,    // armor outline (black)
+  'u': 0x8a3cb0,    // imp purple
+  'e': 0x2a9468,    // emma dragon green
+  'g': 0x7ad0a8,    // emma belly / light green
 };
 
 // Heroes come in two states: UNARMORED (naked, full fur color) and
@@ -66,10 +69,10 @@ const SPRITES = {
     'F..OmmmmO...',
     'F.OmmmmmmO..',
     '.FOmOmmmmO..',
-    '.FOmOmmmmO..',
+    '.FOFOmmmmO..',
     '..FOOmmmO...',
     '..OmmOmmO...',
-    '..OmmOmmO...',
+    '..OFFOFFO...',
     '..OKKOKKO...',
   ],
 
@@ -86,11 +89,11 @@ const SPRITES = {
     '...ObbbbO...',
     '..ObbbObbO..',
     'ObObbObbbO..',
-    'bbObObbbbO..',
-    '.bbObbbbO...',
-    '..ObbObbO...',
-    '..ObbObbO...',
-    '..OKKOKKO...',
+    'bbObObbbbb..',
+    '.bbObbbbbO..',
+    '.....YOYO...',
+    '.....YOYO...',
+    '.....YOYO...',
   ],
   jay_armored: [
     '...O........',
@@ -103,12 +106,12 @@ const SPRITES = {
     '...ObbbbO...',
     '...OmmmmO...',
     '..OmmmOmmO..',
-    'ObOmmOmmmO..',
-    'bbOmOmmmmO..',
-    '.bbOmmmmO...',
-    '..OmmOmmO...',
-    '..OmmOmmO...',
-    '..OKKOKKO...',
+    'ObOmbOmmmO..',
+    'bbObOmmmmm..',
+    '.bbOmmmmmO..',
+    '.....YOYO...',
+    '.....YOYO...',
+    '.....YOYO...',
   ],
 
   // ---- Larry — elephant, profile: big ear back, trunk forward/down ----
@@ -124,11 +127,11 @@ const SPRITES = {
     '.O.OaaaOaa..',
     '..OaaaaaO...',
     '..OaaOaaaO..',
-    '.aOaaOaaaO..',
+    '.aOaKOaaaO..',
     '..aOOaaaaO..',
     '..OaaOaaO...',
     '..OaaOaaO...',
-    '..OKKOKKO...',
+    '..OaKOaKO...',
   ],
   larry_armored: [
      '.OOOO.......',
@@ -142,11 +145,11 @@ const SPRITES = {
     '.O.OmmmOaa..',
     '..OmmmmmO...',
     '..OmmOmmmO..',
-    '.aOmmOmmmO..',
+    '.aOaKOmmmO..',
     '..aOOmmmmO..',
     '..OmmOmmO...',
     '..OmmOmmO...',
-    '..OKKOKKO...',
+    '..OaKOaKO...',
   ],
 
   // ---- Betsy — triceratops, profile: frill back, horn + beak forward ----
@@ -162,11 +165,11 @@ const SPRITES = {
     '...OOdddO...',
     '..OddddddO..',
     '..OddddddO..',
-    '.dOddOdddO..',
+    '.dOdaOdddO..',
     'dddOOdddO...',
     '..OddOddO...',
     '..OddOddO...',
-    '..OKKOKKO...',
+    '..OdaOdaO...',
   ],
   betsy_armored: [
     'Od..........',
@@ -180,11 +183,100 @@ const SPRITES = {
     '...OOmmmO...',
     '..OmmmmmmO..',
     '..OmmmmmmO..',
-    '.dOmmOmmmO..',
+    '.dOdaOmmmO..',
     'dddOOmmmO...',
     '..OmmOmmO...',
     '..OmmOmmO...',
+    '..OdaOdaO...',
+
+  ],
+
+  // ---- Monsters (starting points — refine like the heroes) ----
+  // Imp — small horned gremlin, slow ground walker
+  imp: [
+    '..O.....O...',
+    '..uO...Ou...',
+    '...OuuuuO...',
+    '..OuuuuuuO..',
+    '..OuOuuOuO..',
+    '..OuuuuuuO..',
+    '...OuuuuO...',
+    '..OuuuuuuO..',
+    '..OuuuuuuO..',
+    '...OuOOuO...',
+    '...OK..KO...',
+  ],
+  // Thornboar — charges; spiky back, tusk forward
+  thornboar: [
+    '...O.O.O....',
+    '..OBOBOBBO..',
+    '.OBBBBBBBBO.',
+    '.OBBBBBBBBW.',
+    '.OBBOBBBBBW.',
+    '.OBBBBBBBBW.',
+    '.OBBBBBBBBO.',
+    '..OBBOBBO...',
+    '..OBBOBBO...',
     '..OKKOKKO...',
+  ],
+  // Faun piper — Roq's lesser kin; lobs acorns from range
+  faun: [
+    '..B....B....',
+    '..OB..BO....',
+    '...OSSSO....',
+    '..OSOSSSO...',
+    '..OSSSSPO...',
+    '...OSSSO....',
+    '...OHHHO....',
+    '..OHHHHHO...',
+    '..OHHHHHO...',
+    '...OHHHO....',
+    '...OHHHO....',
+    '..OHHOHHO...',
+    '..OHHOHHO...',
+    '..OKKOKKO...',
+  ],
+  // Wisp — woods Boo; advances when unobserved, freezes when faced
+   wisp: [
+    '...WWWW.....',
+    '..WWWWWWW...',
+    '.WWWWWWWWW..',
+    '.WWWWWWWWW..',
+    '.WWWOWWOWW..',
+    '.WWWOWWOWW..',
+    '.WWWWWWWWW..',
+    '.WWWWWWWWW..',
+    '.WWWWWWWWW..',
+    '.WW.WW.WW...',
+    '.W..W..W....',
+  ],
+
+  // ---- Emma — the dragon boss. Blank 32-wide x 24-tall canvas; draw her here (cell 4 -> 128x96 px) ----
+  emma: [
+    '...............OO..............O',
+    '..............OO..............O.',
+    '.............OOOOO...........OO.',
+    '..OOO.......OOOOO...........OO..',
+    'OOOOOO.......OOOOO.........OO...',
+    '.OOOOOO.....OOOOO...........OO..',
+    '.....OOO.....OOOOOO........OO...',
+    '......OOO.....OOOOOO......OOO...',
+    '.......OOOOOOOOOOOOOOOO..OOO....',
+    '......OOOOOOOOOOOOOOOOOOOOOO....',
+    '.....OOOOOOOOOOOOOOOOOOOOOOO....',
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '................................',
+    '................................',
   ],
 
   // Roq — the satyr (12 x 18): brown horns, beard, red vest, furry legs, hooves
@@ -238,8 +330,9 @@ function makePixelTexture(scene, key, rows, palette, cell) {
   g.destroy();
 }
 
-// per-sprite pixel size (px per cell): satyr small, coin medium; heroes default to 4
-const CELLS = { roq: 2, coin: 3 };
+// All sprites share ONE pixel size (cell 4) so pixels look uniform everywhere.
+// Make a sprite bigger/smaller by changing its grid dimensions, not the cell.
+const CELLS = {};
 
 function buildAllTextures(scene, defCell = 4) {
   for (const key in SPRITES) makePixelTexture(scene, key, SPRITES[key], PALETTE, CELLS[key] || defCell);

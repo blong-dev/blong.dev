@@ -18,6 +18,7 @@ class BootScene extends Phaser.Scene {
   preload(){
     const PA = 'assets/pixel-adventure/';
     this.load.image('sword',    'assets/sword.png');
+    this.load.image('shield',   'assets/shield.png');
     this.load.image('pa_bg',    PA + 'bg_green.png');
     this.load.image('pa_grass', PA + 'grass.png');
     this.load.image('pa_dirt',  PA + 'dirt.png');
@@ -56,7 +57,7 @@ class TitleScene extends Phaser.Scene {
     this.add.tileSprite(0, 348, W, 48, 'pa_grass').setOrigin(0).setDepth(-9);
     this.add.tileSprite(0, 396, W, H - 396, 'pa_dirt').setOrigin(0).setDepth(-9);
     // Phil (static — no bounce) greets you and delivers the hook from a punchy speech bubble
-    this.add.sprite(108, 172, 'duck_idle').setScale(2.0);
+    this.add.sprite(108, 172, 'duck_idle').setScale(2.0).setFlipX(true);   // face his speech bubble
     const bx = 188, by = 32, bw = 504, bh = 128, r = 18, INK = 0x202020;
     const g = this.add.graphics();
     g.fillStyle(INK, 0.22); g.fillRoundedRect(bx + 9, by + 11, bw, bh, r);                              // drop shadow
@@ -99,6 +100,7 @@ class PlayScene extends Phaser.Scene {
   init(data){ this.heroName = data.name || 'Calico'; this.heroChar = data.char || 'ninja'; }
   create(){
     const WORLD_W = 3200, GROUND_TOP = 410;  // sits on the painted grass line
+    if(window.PortChat) window.PortChat.reset();   // clean-slate NPC chats each playthrough (death = fresh start)
     this.cameras.main.setBackgroundColor(PAL.sky);
     this.physics.world.setBounds(0, -200, WORLD_W, GROUND_TOP + 200);   // world FLOOR = grass line — nothing can fall past it
     this.cameras.main.setBounds(0, 0, WORLD_W, H);
@@ -138,12 +140,14 @@ class PlayScene extends Phaser.Scene {
     this.physics.add.collider(this.player, roqPlat);
     this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
 
-    // Phil — assistant duck: stands near the start, turns to face you; click (or face him + S) to talk
-    this.phil = this.physics.add.sprite(230, GROUND_TOP - 100, 'duck_idle');
+    // Phil — assistant duck: trails you a few steps behind, hops obstacles, walks through enemies; click (or face him + S) to talk
+    this.phil = this.physics.add.sprite(60, GROUND_TOP - 100, 'duck_idle');
     this.phil.body.setSize(48, 44).setOffset(3, 10);
     this.phil.body.setCollideWorldBounds(true);
+    this.phil.body.setMaxVelocity(230, 920);
     this.phil.play('phil-idle');
     this.physics.add.collider(this.phil, ground);
+    this.physics.add.collider(this.phil, roqPlat);
     this.phil.setInteractive({ useHandCursor:true });
     this.phil.on('pointerdown', () => this.openChat('phil'));
 
@@ -188,6 +192,7 @@ class PlayScene extends Phaser.Scene {
     this.invuln = 0;
     this.hasShield = false;
     this.tookShield = false;
+    this.carriedShield = null;
     this.boltToggle = false;
     this.physics.add.overlap(this.player, this.enemies, (p, e) => this.playerHit(e));
 
@@ -239,7 +244,12 @@ class PlayScene extends Phaser.Scene {
   hitEnemy(e){
     if(e.getData('dying') || this.swingHits.has(e)) return;
     this.swingHits.add(e);
-    if(e.getData('boss')) e.setData('aggro', true);   // bosses stay passive until you swing at them
+    if(e.getData('boss') && !e.getData('aggro')){     // bosses stay passive until you swing at them
+      e.setData('aggro', true);
+      e.setData('aggroAt', this.time.now);
+      e.setData('nextFire', this.time.now + 1200);    // a beat before the first attack
+      e.setData('nextDive', this.time.now + 3000);    // and well before the first dive
+    }
     if(e.getData('kind') === 'skull' && this.tookShield) e.setData('escalated', true);  // betray the dragon who armed you
     const hp = e.getData('hp') - 1;
     e.setData('hp', hp);
@@ -280,8 +290,12 @@ class PlayScene extends Phaser.Scene {
     this.invuln = this.time.now + 1200;
     const dir = this.player.x <= fromX ? -1 : 1;
     this.player.body.setVelocity(dir * 240, -250);
-    if(this.hasShield){                       // shield eats the hit first
+    if(this.hasShield){                       // shield eats the hit first, then shatters
       this.hasShield = false;
+      if(this.carriedShield){
+        const s = this.carriedShield; this.carriedShield = null;
+        this.tweens.add({ targets:s, scaleX:1.5, scaleY:1.5, angle:120, alpha:0, duration:280, onComplete:()=> s.destroy() });
+      }
       this.player.setTint(0x8fd0ff);
       this.time.delayedCall(1200, () => this.player.clearTint());
       this.updateHpHud();
@@ -303,17 +317,26 @@ class PlayScene extends Phaser.Scene {
     this.time.delayedCall(3500, () => { if(b.active) b.destroy(); });
   }
 
-  tryTakeShield(){
-    if(this.tookShield) return;
+  grantEmmaShield(){                          // called by the chat once Emma is won over
+    if(this.tookShield || this.shieldDropping) return;
+    this.shieldDropping = true;
     const emma = this.enemies.getChildren().find(e => e.active && e.getData('kind') === 'skull');
-    if(emma && Phaser.Math.Distance.Between(this.player.x, this.player.y, emma.x, emma.y) < 220){
-      this.tookShield = true;
-      this.hasShield = true;
-      this.updateHpHud();
-      const t = this.add.text(this.player.x, this.player.y - 90, "Emma's shield!  (+1 hit)",
-        { fontFamily:'monospace', fontSize:'14px', color:'#8fd0ff', fontStyle:'bold' }).setOrigin(0.5).setStroke('#202020', 4);
-      this.tweens.add({ targets:t, y:t.y - 30, alpha:0, duration:1400, onComplete:()=> t.destroy() });
-    }
+    const x = emma ? emma.x : this.player.x, y = emma ? emma.y : 220;
+    const drop = this.physics.add.image(x, y, 'shield').setDepth(4);
+    drop.setCollideWorldBounds(true).setBounce(0.5).setVelocity(Phaser.Math.Between(-30, 30), -140);
+    this.physics.add.collider(drop, this.groundBody);
+    this.tweens.add({ targets: drop, angle: 360, duration: 1100, repeat: -1 });   // shine/spin
+    const t = this.add.text(x, y - 70, "Emma's shield — take it!",
+      { fontFamily:'monospace', fontSize:'14px', color:'#8fd0ff', fontStyle:'bold' }).setOrigin(0.5).setStroke('#202020', 4);
+    this.tweens.add({ targets:t, y:t.y - 26, alpha:0, duration:2400, onComplete:()=> t.destroy() });
+    this.physics.add.overlap(this.player, drop, () => { if(drop.active){ drop.destroy(); this.giveShield(); } });
+  }
+
+  giveShield(){
+    this.tookShield = true; this.hasShield = true; this.shieldDropping = false;
+    this.updateHpHud();
+    if(this.carriedShield) this.carriedShield.destroy();
+    this.carriedShield = this.add.image(this.player.x, this.player.y, 'shield').setScale(0.66).setDepth(1);
   }
 
   die(){                            // hp gone = genuine death — fade out, full restart from the home screen
@@ -327,9 +350,23 @@ class PlayScene extends Phaser.Scene {
   }
 
   updatePhil(){
-    this.phil.body.setVelocityX(0);                      // stays put
-    this.phil.setFlipX(this.player.x < this.phil.x);     // turns to face you
-    this.phil.play('phil-idle', true);
+    const p = this.phil, b = p.body;
+    const onGround = b.blocked.down || b.touching.down;
+    const gap = this.player.x - p.x, dist = Math.abs(gap);
+    let chasing = p.getData('chasing');
+    if(dist > 150) chasing = true; else if(dist < 80) chasing = false;   // hysteresis: trail, but hold once close
+    p.setData('chasing', chasing);
+    if(chasing){
+      const dir = Math.sign(gap) || 1;
+      b.setVelocityX(dir * 200);                 // never faster than the hero
+      p.setFlipX(dir > 0);                       // face the way he's hustling
+      const blocked = (b.blocked.left && dir < 0) || (b.blocked.right && dir > 0);
+      if(onGround && (blocked || this.player.y < p.y - 60)) b.setVelocityY(-470);   // hop obstacles / climb to you
+    } else {
+      b.setVelocityX(0);                         // close enough — hold position so you can turn and talk
+      p.setFlipX(this.player.x > p.x);           // turn to face you
+    }
+    p.play('phil-idle', true);
   }
 
   openChat(npc){
@@ -337,6 +374,13 @@ class PlayScene extends Phaser.Scene {
       : this.enemies.getChildren().find(e => e.getData('kind') === (npc === 'roq' ? 'pig' : 'skull'));
     if(!src || !src.active || !window.PortChat) return;
     window.PortChat.open(npc, this);   // DOM chat panel; pauses the world while open
+  }
+
+  showGreet(e, text){                  // floating bubble over a boss on first approach
+    const t = this.add.text(e.x, e.y - 72, text,
+      { fontFamily:'monospace', fontSize:'13px', color:'#202020', backgroundColor:'#ffffff',
+        padding:{ x:7, y:5 }, wordWrap:{ width:250 }, align:'center' }).setOrigin(0.5, 1).setDepth(30);
+    this.tweens.add({ targets:t, y:t.y - 16, alpha:0, delay:2600, duration:1300, onComplete:()=> t.destroy() });
   }
 
   update(time, delta){
@@ -380,11 +424,22 @@ class PlayScene extends Phaser.Scene {
     }
 
     this.updatePhil();
+    if(this.carriedShield){                   // shield rides on the hero's arm until spent
+      this.carriedShield.x = this.player.x + this.facing * 15;
+      this.carriedShield.y = this.player.y + 8;
+      this.carriedShield.setFlipX(this.facing < 0);
+    }
 
     // enemy behaviours
     this.enemies.getChildren().forEach(e => {
       if(!e.active || e.getData('dying')) return;
       const kind = e.getData('kind');
+
+      if(e.getData('boss') && !e.getData('greeted') && Phaser.Math.Distance.Between(this.player.x, this.player.y, e.x, e.y) < 340){
+        e.setData('greeted', true);   // first approach this run → auto speech bubble
+        this.showGreet(e, kind === 'pig' ? "Ho there, hero! Got work for you — press S to talk."
+                                         : "Lower your blade, little one… let's talk. Press S.");
+      }
 
       if(kind === 'ghost'){                          // Wisp — Boo: freezes when faced; else zig-zags toward you
         e.setFlipX(this.player.x > e.x);
@@ -410,22 +465,26 @@ class PlayScene extends Phaser.Scene {
           e.body.setVelocityX(0);
         }
 
-      } else if(kind === 'skull'){                   // Emma — passive until provoked, then flight + bolts + dives
+      } else if(kind === 'skull'){                   // Emma — passive; on provoke she recoils, then loops; never faster than the hero
         const esc = e.getData('escalated');
+        const SP = esc ? 200 : 150;                                 // base escapable; escalated matches the hero's ~200 (never exceeds)
         if(!e.getData('aggro')){                                    // hovering, not yet attacking
           e.body.setVelocity(0, ((230 + Math.sin(time / 600) * 45) - e.y) * 2);
-        } else if(time < (e.getData('diveUntil') || 0)){           // mid-dive: swoop at the player
-          const a = Math.atan2(this.player.y - e.y, this.player.x - e.x), ds = esc ? 420 : 300;
-          e.body.setVelocity(Math.cos(a) * ds, Math.sin(a) * ds);
+        } else if(time < (e.getData('aggroAt') || 0) + 1100){       // first-hit recoil: pull away and rise, give the hero room
+          const away = (e.x < this.player.x) ? -1 : 1;
+          e.body.setVelocity(away * SP, -SP * 0.7);
+        } else if(time < (e.getData('diveUntil') || 0)){           // mid-dive: swoop at the player (dodgeable — slower than you)
+          const a = Math.atan2(this.player.y - e.y, this.player.x - e.x);
+          e.body.setVelocity(Math.cos(a) * SP, Math.sin(a) * SP);
         } else {                                                   // flight: drift + bob, fire, schedule next dive
           let dir = e.getData('dir');
           if(e.x > e.getData('homeX') + 260) dir = -1;
           else if(e.x < e.getData('homeX') - 260) dir = 1;
           e.setData('dir', dir);
-          e.body.setVelocityX(dir * (esc ? 120 : 60));
+          e.body.setVelocityX(dir * (esc ? 110 : 60));
           e.body.setVelocityY(((230 + Math.sin(time / (esc ? 240 : 600)) * (esc ? 80 : 45)) - e.y) * 2.5);
-          if(time > (e.getData('nextFire') || 0)){ this.fireBolt(e); e.setData('nextFire', time + (esc ? 550 : 850)); }
-          if(time > (e.getData('nextDive') || 0)){ e.setData('diveUntil', time + 550); e.setData('nextDive', time + (esc ? 2000 : 3500)); }
+          if(time > (e.getData('nextFire') || 0)){ this.fireBolt(e); e.setData('nextFire', time + (esc ? 650 : 950)); }
+          if(time > (e.getData('nextDive') || 0)){ e.setData('diveUntil', time + 480); e.setData('nextDive', time + (esc ? 2300 : 3800)); }
         }
 
       } else if(kind === 'plant'){                   // Faun — lobs an arc
@@ -442,7 +501,7 @@ class PlayScene extends Phaser.Scene {
           const sx = (this.player.x < e.x) ? -1 : 1;
           b.body.setVelocity(sx * 200, -300);          // consistent arc toward your side — read it and weave
           this.time.delayedCall(4000, () => { if(b.active) b.destroy(); });
-          e.setData('nextFire', time + 600);
+          e.setData('nextFire', time + 950);
         }
 
       } else if(e.getData('patrol') > 0){            // Imp (Slime) — patrol
@@ -468,6 +527,14 @@ class PlayScene extends Phaser.Scene {
       const hb = new Phaser.Geom.Rectangle(this.player.x + this.facing * 46 - 39, this.player.y - 60, 78, 96);
       this.enemies.getChildren().forEach(e => {
         if(e.active && !e.getData('dying') && Phaser.Geom.Rectangle.Overlaps(hb, e.getBounds())) this.hitEnemy(e);
+      });
+      this.bolts.getChildren().forEach(b => {                              // swat projectiles out of the air
+        if(b.active && Phaser.Geom.Rectangle.Overlaps(hb, b.getBounds())){
+          const px = b.x, py = b.y, tex = (b.texture && b.texture.key) || 'p_bullet';
+          b.destroy();
+          const poof = this.add.image(px, py, tex).setDepth(6);
+          this.tweens.add({ targets: poof, scaleX: 1.9, scaleY: 1.9, alpha: 0, duration: 170, onComplete: () => poof.destroy() });
+        }
       });
       if(this.attackElapsed >= total){ this.attacking = false; this.sword.setVisible(false); }
     }

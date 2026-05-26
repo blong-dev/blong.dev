@@ -3,6 +3,9 @@
 .env
 *.key
 
+# runtime log
+chat.log
+
 # dependencies (Phaser is loaded via CDN today; this is for later)
 node_modules/
 

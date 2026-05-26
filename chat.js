@@ -10,14 +10,14 @@
     phil: { name: 'Phil',  model: 'Gemini',          accent: '#ffe9a8',
             opener: "What's popping, big hero with the big hero eyes? What's a hero like you doin' heroically in a place like this?" },
     roq:  { name: 'Roq',   model: 'Groq · Llama',     accent: '#ffd9cc',
-            opener: "Ho there, hero — Roq's the name, finest business goat in Port Foliopolis. You'll have heard about the dragon? Emma — up the mountain, terrorizing my town, bad for everyone and worse for trade. Slay the beast and there's 25 gold in it for you. Do we have a deal?" },
+            opener: "Ho there, hero — Roq's the name, finest business hog in Port Foliopolis. You'll have heard about the demilich? Emma — up the mountain, terrorizing my town, bad for everyone and worse for trade. Put her down and there's 25 gold in it for you. Do we have a deal?" },
     emma: { name: 'Emma',  model: 'Gemini 2.5 Flash', accent: '#c9efdc',
-            opener: "Lower the blade, little hero — let's not. I am Emma, last of the dragons these waters will ever see, and I've eaten nothing but fish since before Port Foliopolis had a name. Roq sent you? They always do — greedy goats, generation after generation, never once a thank-you for keeping their waters from spilling over with the things. Stay your hand and I'll make it worth your while: a shield, from my own hoard. Stand with me, not against me." },
+            opener: "Lower the blade, little hero — let's not. I am Emma, a demilich, the last of the old powers these mountains will ever know, and I have kept this valley since before Port Foliopolis had a name. Roq sent you? They always do — greedy hogs, generation after generation, never once a thank-you for the far worse things I hold from their door. Stay your hand and I'll make it worth your while: a shield, from my own hoard. Stand with me, not against me." },
   };
 
   const sessions = { phil: [], roq: [], emma: [] };   // per-NPC history, this visit
   const bossLog = [];                                 // Emma/Roq transcripts, fed to Phil
-  let scene = null, npc = null;
+  let scene = null, npc = null, pendingShield = false;
   let root, titleEl, badgeEl, logEl, inputEl, sendBtn;
 
   const el = (tag, css, txt) => { const e = document.createElement(tag); if (css) e.style.cssText = css; if (txt != null) e.textContent = txt; return e; };
@@ -86,7 +86,9 @@
     if (!root) return;
     root.style.display = 'none';
     if (npc === 'roq' || npc === 'emma') bossLog.push({ who: NPCS[npc].name, lines: sessions[npc].slice() });
+    const grant = pendingShield && scene && scene.grantEmmaShield;
     if (scene) { scene.input.keyboard.enabled = true; scene.scene.resume(); }
+    if (grant) { pendingShield = false; scene.grantEmmaShield(); }   // Emma agreed in chat → drop the shield
     npc = null;
   }
 
@@ -99,7 +101,8 @@
     sendBtn.disabled = true;
     const pending = bubble('npc', '…', NPCS[npc].accent);
     try {
-      const reply = await respond(npc, sessions[npc], text);
+      let reply = await respond(npc, sessions[npc], text);
+      if (npc === 'emma' && reply.includes('<<SHIELD>>')) { reply = reply.replace(/<<SHIELD>>/g, '').trim(); pendingShield = true; }
       pending.textContent = reply;
       sessions[npc].push({ role: 'npc', text: reply });
     } catch (err) {
@@ -119,5 +122,11 @@
     return (await r.json()).reply;
   }
 
-  window.PortChat = { open, close };
+  function reset(){                       // wipe all NPC memory for a fresh playthrough
+    Object.keys(sessions).forEach(k => { sessions[k] = []; });
+    bossLog.length = 0;
+    pendingShield = false;
+  }
+
+  window.PortChat = { open, close, reset };
 })();

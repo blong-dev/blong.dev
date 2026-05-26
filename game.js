@@ -30,6 +30,7 @@ class BootScene extends Phaser.Scene {
     const ES = { slime:[132,90], ghost:[88,60], rino:[156,102], plant:[132,126], pig:[108,90], skull:[156,162] };
     for (const k in ES) this.load.spritesheet(`${k}_idle`, PA + `${k}_idle.png`, { frameWidth:ES[k][0], frameHeight:ES[k][1] });
     ['p_orange','p_red','p_bullet','p_rock'].forEach(k => this.load.image(k, PA + k + '.png'));
+    this.load.spritesheet('duck_idle', PA + 'duck_idle.png', { frameWidth:54, frameHeight:54 });
   }
   create(){
     buildAllTextures(this);
@@ -42,6 +43,7 @@ class BootScene extends Phaser.Scene {
     });
     ['slime','ghost','rino','plant','pig','skull'].forEach(k =>
       this.anims.create({ key:`${k}-idle`, frames:this.anims.generateFrameNumbers(`${k}_idle`), frameRate:14, repeat:-1 }));
+    this.anims.create({ key:'phil-idle', frames:this.anims.generateFrameNumbers('duck_idle'), frameRate:8, repeat:-1 });
     this.scene.start('title');
   }
 }
@@ -53,9 +55,21 @@ class TitleScene extends Phaser.Scene {
     this.add.tileSprite(0, 0, W, H, 'pa_bg').setOrigin(0).setDepth(-10);
     this.add.tileSprite(0, 348, W, 48, 'pa_grass').setOrigin(0).setDepth(-9);
     this.add.tileSprite(0, 396, W, H - 396, 'pa_dirt').setOrigin(0).setDepth(-9);
-    this.add.text(W/2, 80, 'PORT FOLIOPOLIS\nNEEDS YOUR HELP!',
-      {fontFamily:'monospace', fontSize:'34px', color:'#ffffff', align:'center', fontStyle:'bold'})
-      .setOrigin(0.5).setStroke('#202020', 6);
+    // Phil (static — no bounce) greets you and delivers the hook from a punchy speech bubble
+    this.add.sprite(108, 172, 'duck_idle').setScale(2.0);
+    const bx = 188, by = 32, bw = 504, bh = 128, r = 18, INK = 0x202020;
+    const g = this.add.graphics();
+    g.fillStyle(INK, 0.22); g.fillRoundedRect(bx + 9, by + 11, bw, bh, r);                              // drop shadow
+    g.fillStyle(0xffffff, 1); g.fillRoundedRect(bx, by, bw, bh, r);                                     // body
+    g.lineStyle(5, INK, 1); g.strokeRoundedRect(bx, by, bw, bh, r);                                     // bold border
+    g.fillStyle(0xffffff, 1); g.fillTriangle(bx + 34, by + bh - 3, bx + 98, by + bh - 3, 148, by + bh + 42);  // tail
+    g.lineStyle(5, INK, 1);
+    g.lineBetween(bx + 34, by + bh, 148, by + bh + 42);
+    g.lineBetween(bx + 98, by + bh, 148, by + bh + 42);
+    this.add.text(bx + bw / 2, by + 47, 'PORT FOLIOPOLIS',
+      { fontFamily:'monospace', fontSize:'31px', color:'#c0392b', fontStyle:'bold' }).setOrigin(0.5);
+    this.add.text(bx + bw / 2, by + 88, 'NEEDS YOUR HELP!',
+      { fontFamily:'monospace', fontSize:'27px', color:'#202020', fontStyle:'bold' }).setOrigin(0.5);
     this.add.text(W/2, 190, 'CHOOSE YOUR HERO',
       {fontFamily:'monospace', fontSize:'20px', color:'#202020'}).setOrigin(0.5);
 
@@ -123,6 +137,15 @@ class PlayScene extends Phaser.Scene {
     this.physics.add.collider(this.player, ground);
     this.physics.add.collider(this.player, roqPlat);
     this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
+
+    // Phil — assistant duck: stands near the start, turns to face you; click (or face him + S) to talk
+    this.phil = this.physics.add.sprite(230, GROUND_TOP - 100, 'duck_idle');
+    this.phil.body.setSize(48, 44).setOffset(3, 10);
+    this.phil.body.setCollideWorldBounds(true);
+    this.phil.play('phil-idle');
+    this.physics.add.collider(this.phil, ground);
+    this.phil.setInteractive({ useHandCursor:true });
+    this.phil.on('pointerdown', () => this.openChat('phil'));
 
     // coins
     this.coins = 0;
@@ -303,6 +326,19 @@ class PlayScene extends Phaser.Scene {
     if(this.hpText) this.hpText.setText('HP ' + '♥'.repeat(Math.max(0, this.hp)) + (this.hasShield ? ' (S)' : ''));
   }
 
+  updatePhil(){
+    this.phil.body.setVelocityX(0);                      // stays put
+    this.phil.setFlipX(this.player.x < this.phil.x);     // turns to face you
+    this.phil.play('phil-idle', true);
+  }
+
+  openChat(npc){
+    const src = npc === 'phil' ? this.phil
+      : this.enemies.getChildren().find(e => e.getData('kind') === (npc === 'roq' ? 'pig' : 'skull'));
+    if(!src || !src.active || !window.PortChat) return;
+    window.PortChat.open(npc, this);   // DOM chat panel; pauses the world while open
+  }
+
   update(time, delta){
     const b = this.player.body, speed = 200, JUMP_V = 480, MAX_JUMPS = 2;
     if(this.cursors.left.isDown){ b.setVelocityX(-speed); this.facing = -1; }
@@ -318,7 +354,18 @@ class PlayScene extends Phaser.Scene {
       if(this.jumpsUsed === 2) this.player.play(`${this.heroChar}-djump`); // 2nd (air) jump → double-jump anim
     }
     if(Phaser.Input.Keyboard.JustDown(this.keyA)) this.doAttack();
-    if(Phaser.Input.Keyboard.JustDown(this.keyS)) this.tryTakeShield();
+    if(Phaser.Input.Keyboard.JustDown(this.keyS)){           // talk to the nearest NPC you're facing
+      let best = null, bd = 240;
+      const check = (k, n) => {
+        if(!n || !n.active) return;
+        const d = Phaser.Math.Distance.Between(this.player.x, this.player.y, n.x, n.y);
+        const facing = Math.sign(n.x - this.player.x) === this.facing || d < 70;   // must be looking at them
+        if(d < bd && facing){ bd = d; best = k; }
+      };
+      check('phil', this.phil);
+      this.enemies.getChildren().forEach(e => { if(e.getData('kind') === 'pig') check('roq', e); if(e.getData('kind') === 'skull') check('emma', e); });
+      if(best) this.openChat(best);
+    }
     // animation state (let the double-jump anim play out before reverting to jump/fall)
     const hc = this.heroChar;
     const cur = this.player.anims.currentAnim && this.player.anims.currentAnim.key;
@@ -331,6 +378,8 @@ class PlayScene extends Phaser.Scene {
     } else {
       this.player.play(`${hc}-idle`, true);
     }
+
+    this.updatePhil();
 
     // enemy behaviours
     this.enemies.getChildren().forEach(e => {

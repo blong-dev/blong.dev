@@ -2,6 +2,10 @@
 // Bright-NES placeholder palette; shapes stand in for sprites.
 const W = 800, H = 480;
 
+// Individual Glitch objects extracted from the BG sampler (assets/glitch/elements/<biome>_NN.png).
+// Scattered across the explore world to make a diverse, evolving singular background.
+const GLX_ELEM = { meadow: 21, woods: 11, mountain: 9, lair: 9 };
+
 const PAL = {
   sky:   0x5c94fc,  // SMB sky blue
   grass: 0x00a800,
@@ -19,11 +23,19 @@ class BootScene extends Phaser.Scene {
     const PA = 'assets/pixel-adventure/';
     this.load.image('sword',    'assets/sword.png');
     this.load.image('shield',   'assets/shield.png');
-    this.load.image('pa_bg',    PA + 'bg_green.png');
+    this.load.image('pa_bg',      PA + 'bg_green.png');
+    this.load.image('pa_bg_blue', PA + 'pa_bg_blue.png');
+    this.load.image('pa_bg_gray', PA + 'pa_bg_gray.png');
+    this.load.image('sky_zones', 'assets/glitch/sky_zones.png');           // world-anchored per-zone sky gradient
+    ['mtn_0','mtn_1','mtn_2','treeline_leafy','treeline_pine0','treeline_pine1']   // big parallax backdrop pieces
+      .forEach(k => this.load.image('bk_' + k, 'assets/glitch/backdrop/' + k + '.png'));
+    ['pa_woods_top','pa_woods_fill','pa_mtn','pa_gold','pa_wood'].forEach(k => this.load.image(k, PA + k + '.png'));
     this.load.image('pa_grass', PA + 'grass.png');
     this.load.image('pa_dirt',  PA + 'dirt.png');
+    for (const b in GLX_ELEM) for (let i = 0; i < GLX_ELEM[b]; i++)   // scattered Glitch bg objects
+      this.load.image(`el_${b}_${i}`, `assets/glitch/elements/${b}_${String(i).padStart(2, '0')}.png`);
     ['ninja','pink','mask','virtual'].forEach(c => {
-      ['idle','run','jump','fall','djump'].forEach(a => {
+      ['idle','run','jump','fall','djump','wall'].forEach(a => {
         this.load.spritesheet(`${c}_${a}`, PA + `${c}_${a}.png`, { frameWidth:96, frameHeight:96 });
       });
     });
@@ -41,11 +53,13 @@ class BootScene extends Phaser.Scene {
       this.anims.create({ key:`${c}-jump`, frames:this.anims.generateFrameNumbers(`${c}_jump`), frameRate:1 });
       this.anims.create({ key:`${c}-fall`, frames:this.anims.generateFrameNumbers(`${c}_fall`), frameRate:1 });
       this.anims.create({ key:`${c}-djump`, frames:this.anims.generateFrameNumbers(`${c}_djump`), frameRate:20, repeat:0 });
+      this.anims.create({ key:`${c}-wall`,  frames:this.anims.generateFrameNumbers(`${c}_wall`),  frameRate:16, repeat:-1 });
     });
     ['slime','ghost','rino','plant','pig','skull'].forEach(k =>
       this.anims.create({ key:`${k}-idle`, frames:this.anims.generateFrameNumbers(`${k}_idle`), frameRate:14, repeat:-1 }));
     this.anims.create({ key:'phil-idle', frames:this.anims.generateFrameNumbers('duck_idle'), frameRate:8, repeat:-1 });
-    this.scene.start('title');
+    const explore = location.search.indexOf('explore') >= 0;   // /?explore → roam the empty world
+    this.scene.start(explore ? 'explore' : 'title');
   }
 }
 
@@ -541,6 +555,227 @@ class PlayScene extends Phaser.Scene {
   }
 }
 
+// ============================================================
+//  EXPLORE — the whole field, blockout, no NPCs/enemies (/?explore)
+// ============================================================
+class ExploreScene extends Phaser.Scene {
+  constructor(){ super('explore'); }
+  create(){
+    const GT = 410, WORLD_W = 9600;
+    this.killY = 1100;
+    this.physics.world.setBounds(0, -400, WORLD_W, 1600);
+    this.cameras.main.setBounds(0, -400, WORLD_W, 1600);   // headroom above the mountain top so the hero stays centered
+    this.cameras.main.setBackgroundColor(PAL.sky);
+
+    // biome ranges (drive the labels + the parallax-bg swapping)
+    this.BIOMES = [
+      [0,    2400, 'meadow',   'MEADOW · TOWN'],
+      [2400, 4800, 'delta',    'DELTA'],
+      [4800, 7200, 'woods',    'WOODS'],
+      [7200, 8800, 'mountain', 'MOUNTAIN'],
+      [8800, 9600, 'lair',     'LAIR'],
+    ];
+    this.BIOMES.forEach(([x1, x2, key, label]) =>
+      this.add.text((x1 + x2) / 2, 150, label, { fontFamily:'monospace', fontSize:'20px', color:'#ffffff' })
+        .setOrigin(0.5).setStroke('#202020', 5).setDepth(-1));
+    // Background = world-anchored parallax. Colours belong to the zone's PLACE in the world (you scroll
+    // through them), not to the camera: a per-zone sky gradient + far mountains + mid treelines, all in
+    // world space behind the near scatter. No camera-triggered crossfade.
+    this.buildParallax(WORLD_W);
+
+    // player (default hero for roaming)
+    this.player = this.physics.add.sprite(80, GT - 130, 'ninja_idle');
+    this.player.body.setSize(69, 72).setOffset(12, 24);
+    this.player.body.setMaxVelocity(220, 950);
+    this.player.play('ninja-idle');
+    this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
+    this.cameras.main.setDeadzone(140, 240);   // roam-box, not glued to center; headroom (above) handles the mountain top
+    this.lastSafe = { x: 80, y: GT - 130 };
+    this.facing = 1; this.jumpsUsed = 0;
+
+    const floor = (x1, x2, topY, topTile, fillTile) => {
+      const w = x2 - x1;
+      this.add.tileSprite(x1, topY + 48, w, 240, fillTile || topTile).setOrigin(0).setDepth(-7);   // dirt body below
+      this.add.tileSprite(x1, topY, w, 48, topTile).setOrigin(0).setDepth(-5);                      // one full surface tile on top (grass never covered)
+      const r = this.add.rectangle(x1 + w / 2, topY + 26, w, 52).setVisible(false);
+      this.physics.add.existing(r, true); r.body.setSize(w, 52);
+      this.physics.add.collider(this.player, r);
+    };
+    const plat = (x1, x2, topY) => {           // wooden jump-through platform (pack wood-beam tile)
+      const w = x2 - x1;
+      this.add.tileSprite(x1, topY, w, 24, 'pa_wood').setOrigin(0).setDepth(-4);
+      const r = this.add.rectangle(x1 + w / 2, topY + 12, w, 24).setVisible(false);
+      this.physics.add.existing(r, true); r.body.setSize(w, 24);
+      r.body.checkCollision.down = r.body.checkCollision.left = r.body.checkCollision.right = false;
+      this.physics.add.collider(this.player, r);
+    };
+    const wall = (x, topY, h) => {              // solid vertical rock face — wall-slide + wall-jump surface
+      this.add.tileSprite(x - 22, topY, 44, h, 'pa_mtn').setOrigin(0).setDepth(-6);
+      const r = this.add.rectangle(x, topY + h / 2, 36, h).setVisible(false);
+      this.physics.add.existing(r, true); r.body.setSize(36, h);
+      this.physics.add.collider(this.player, r);
+    };
+
+    floor(0, 2400, GT, 'pa_grass', 'pa_dirt');                        // MEADOW + TOWN
+    plat(1980, 2200, GT - 120);                                       //   Roq's town platform (wood)
+    // DELTA — blue water + wood logs you hop across
+    this.add.rectangle(2400, GT + 6, 2400, 380, 0x3a78c8).setOrigin(0).setDepth(-6).setAlpha(0.6);
+    this.add.rectangle(2400, GT + 6, 2400, 10, 0x9fd6f2).setOrigin(0).setDepth(-6).setAlpha(0.85);   // surface shimmer
+    [2540, 2840, 3140, 3440, 3740, 4040, 4340, 4640].forEach(lx => plat(lx, lx + 170, GT));
+    floor(4800, 5950, GT, 'pa_woods_top', 'pa_woods_fill');           // WOODS — orange/brown (pit gap 5950–6300)
+    floor(6300, 7200, GT, 'pa_woods_top', 'pa_woods_fill');
+    // MOUNTAIN — a dramatic vertical climb: rising ledges (double-jumpable) with solid rock faces
+    // you can wall-slide down and wall-jump off; the scattered rock spires sell the crag.
+    floor(7200, 7760, GT,        'pa_mtn', 'pa_mtn');                 // base ledge (arrive from woods)
+    floor(7760, 8200, GT - 160,  'pa_mtn', 'pa_mtn');                 // ledge 2  (rise 160)
+    floor(8200, 8800, GT - 285,  'pa_mtn', 'pa_mtn');                 // ledge 3 → lair approach (rise 125)
+    wall(7760, GT - 160, 160);                                       // ledge-2 rock face
+    wall(8200, GT - 285, 125);                                       // ledge-3 rock face
+    floor(8800, 9600, GT - 285, 'pa_gold', 'pa_gold');               // LAIR — gold plate floor
+    floor(5820, 6380, 820, 'pa_mtn', 'pa_mtn');                       // HOME BASE — secret chamber (rock)
+    this.add.text(6100, 760, '★ 1-UP ★', { fontFamily:'monospace', fontSize:'15px', color:'#fcd800' })
+      .setOrigin(0.5).setStroke('#202020', 4);
+    // floating platforms — a little verticality + challenge through the run
+    [[760, 940, GT - 110], [1180, 1340, GT - 175], [1520, 1660, GT - 120],
+     [5080, 5260, GT - 130], [5480, 5660, GT - 205], [6620, 6820, GT - 140]]
+      .forEach(([a, b, y]) => plat(a, b, y));
+
+    this.scatterBg(GT, WORLD_W);   // diverse, evolving singular background of individual Glitch objects
+
+    this.cursors = this.input.keyboard.createCursorKeys();
+    this.keySpace = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
+    this.add.text(12, 12, 'EXPLORE  ·  ←→ move  ·  space ×2 jump  ·  fall = respawn',
+      { fontFamily:'monospace', fontSize:'13px', color:'#ffffff' }).setScrollFactor(0).setStroke('#202020', 4).setDepth(50);
+  }
+
+  // World-anchored parallax backdrop. Wide pieces (distant mountain ranges + their green foothills, and
+  // big treelines) are laid out in world space and parallaxed by depth, so the scenery belongs to the
+  // zone's PLACE in the world. Vertically screen-locked (scrollFactorY 0) → a stable distant horizon.
+  buildParallax(WORLD_W){
+    this.sky = this.add.tileSprite(0, 0, W, H, 'sky_zones').setOrigin(0).setScrollFactor(0).setDepth(-50);
+    const rnd = (a, c) => a + Math.random() * (c - a);
+    const zoneAt = (x) => (this.BIOMES.find(z => x >= z[0] && x < z[1]) || this.BIOMES[0])[2];
+    const layer = (factor, depth, baseY, poolFor, hLo, hHi, overlap, gap, aLo, aHi, tint) => {
+      let rx = 100;
+      while (rx < WORLD_W){
+        const pool = poolFor(zoneAt(rx));
+        if (pool && pool.length){
+          const key = pool[Math.floor(Math.random() * pool.length)];
+          const src = this.textures.get(key).getSourceImage();
+          const sc = rnd(hLo, hHi) / src.height;                 // scale each piece to a target on-screen height
+          const img = this.add.image(rx * factor, baseY, key).setOrigin(0.5, 1).setScale(sc)
+            .setScrollFactor(factor, 0).setDepth(depth).setAlpha(rnd(aLo, aHi));
+          if (tint) img.setTint(tint);
+          if (Math.random() < 0.5) img.setFlipX(true);
+          rx += (src.width * sc * overlap) / factor;             // step in real-X (layer is compressed by `factor`)
+        } else rx += gap;
+      }
+    };
+    // FAR mountains (incl. the green foothill that reads as a big rolling hill) — distant + hazed
+    layer(0.30, -40, 300,
+      (z) => ({ meadow:['bk_mtn_0','bk_mtn_1'], delta:['bk_mtn_1'], woods:['bk_mtn_0'],
+                mountain:['bk_mtn_2','bk_mtn_1'], lair:[] }[z]),
+      160, 240, 0.82, 1700, 0.82, 0.95, 0xecf1f7);
+    // MID treelines — the bigger trees, per forest zone (fuller now)
+    layer(0.55, -34, 322,
+      (z) => ({ meadow:['bk_treeline_leafy'], delta:[],
+                woods:['bk_treeline_pine0','bk_treeline_pine1'], mountain:['bk_treeline_pine1'], lair:[] }[z]),
+      120, 190, 0.58, 700, 0.9, 1, null);
+    // CAVE = hard stop: a dark slab in front of the parallax bg from the lair entrance on, so the cave
+    // reads as a sealed chamber (the sky gradient underneath stays the mountain colour). Floor + the
+    // lair's own stalagmites/stalactites still render in front of it.
+    this.add.rectangle(8800, -400, 1000, 1700, 0x0d0a13).setOrigin(0, 0).setDepth(-33);
+  }
+
+  // Scatter individual Glitch objects across the whole world — one continuous background whose
+  // species + density evolve with the biome (with soft blend zones at the borders, so it never snaps).
+  scatterBg(GT, WORLD_W){
+    const rnd = (a, c) => a + Math.random() * (c - a);
+    const groundY = (x) => {                         // approx terrain top at X, so scenery hugs the climb
+      if (x >= 8200) return GT - 285;                //   ledge 3 + lair
+      if (x >= 7760) return GT - 160;                //   ledge 2
+      return GT;                                     //   meadow / delta / woods / base ledge
+    };
+    const poolAt = (x) => {                           // biome pool, blended near borders + remixed for mixed zones
+      let b = this.BIOMES.find(z => x >= z[0] && x < z[1]) || this.BIOMES[0];
+      const idx = this.BIOMES.indexOf(b), Z = 320;
+      if (x - b[0] < Z && idx > 0 && Math.random() < (1 - (x - b[0]) / Z) * 0.5) b = this.BIOMES[idx - 1];
+      else if (b[1] - x < Z && idx < this.BIOMES.length - 1 && Math.random() < (1 - (b[1] - x) / Z) * 0.5) b = this.BIOMES[idx + 1];
+      let key = b[2];
+      if (key === 'delta')    key = Math.random() < 0.5 ? 'meadow' : 'woods';        // delta borrows its neighbours
+      if (key === 'mountain') key = Math.random() < 0.55 ? 'mountain' : 'woods';     // rocky, but trees cling on
+      return key;
+    };
+    const zoneAt = (x) => (this.BIOMES.find(z => x >= z[0] && x < z[1]) || this.BIOMES[0])[2];
+    let x = 40;
+    while (x < WORLD_W - 40){
+      const rz = zoneAt(x);                             // actual zone (poolAt remaps; rz is the real ground)
+      const key = poolAt(x), n = GLX_ELEM[key];
+      if (!n){ x += 160; continue; }
+      const tex = `el_${key}_${Math.floor(Math.random() * n)}`;
+      const src = this.textures.get(tex).getSourceImage();
+      if (key === 'lair' && src.width / src.height > 1.5){   // wide stalactite bands hang from the chamber ceiling
+        const s = this.add.image(x, groundY(x) - 240, tex).setOrigin(0.5, 0)
+          .setScale(rnd(0.3, 0.5)).setDepth(-12).setAlpha(rnd(0.85, 1));
+        if (Math.random() < 0.5) s.setFlipX(true);
+        x += rnd(120, 220);
+        continue;
+      }
+      if (rz === 'delta' && src.height > 250){          // delta is open water — keep low banks/reeds, no trees
+        x += rnd(90, 180);
+        continue;
+      }
+      const distant = Math.random() < 0.45;           // two depth bands → a sense of distance
+      const scale = distant ? rnd(0.16, 0.30) : rnd(0.30, 0.56);
+      const baseY = groundY(x) + rnd(-2, 24) - (distant ? rnd(8, 40) : 0);
+      const s = this.add.image(x, baseY, tex).setOrigin(0.5, 1).setScale(scale)
+        .setDepth(distant ? -30 : -12).setAlpha(distant ? rnd(0.5, 0.78) : rnd(0.85, 1));
+      if (distant) s.setTint(0xc4cfe0);               // mild haze pushes the far band back
+      if (Math.random() < 0.5) s.setFlipX(true);
+      const dense = rz === 'woods';                   // pack the woods thick with trees
+      x += dense ? (distant ? rnd(26, 60) : rnd(42, 95))
+                 : (distant ? rnd(60, 140) : rnd(110, 240));
+    }
+  }
+
+  update(){
+    const b = this.player.body, SPEED = 200, JUMP = 480;
+    const L = this.cursors.left.isDown, R = this.cursors.right.isDown;
+    const onGround = b.blocked.down || b.touching.down;
+    // wall-slide: airborne, pressing into a solid wall, sinking → cling + slow the fall
+    const wallL = (b.blocked.left  || b.touching.left)  && L;
+    const wallR = (b.blocked.right || b.touching.right) && R;
+    const sliding = !onGround && (wallL || wallR) && b.velocity.y > 10;
+    const wallDir = wallL ? 1 : -1;            // push-off direction (away from the wall)
+
+    if(L){ b.setVelocityX(-SPEED); this.facing = -1; }
+    else if(R){ b.setVelocityX(SPEED); this.facing = 1; }
+    else b.setVelocityX(0);
+
+    if(onGround) this.jumpsUsed = 0;
+    if(sliding){ if(b.velocity.y > 90) b.setVelocityY(90); this.jumpsUsed = 1; }   // grip the rock; keep one air-jump
+
+    if(Phaser.Input.Keyboard.JustDown(this.keySpace)){
+      if(sliding){ b.setVelocityX(wallDir * 280); b.setVelocityY(-JUMP); this.jumpsUsed = 1; this.facing = wallDir; }   // kick off the wall
+      else if(this.jumpsUsed < 2){ b.setVelocityY(-JUMP); this.jumpsUsed++; }
+    }
+
+    if(sliding){ this.player.play('ninja-wall', true); this.player.setFlipX(wallR); }   // cling, facing away from the wall
+    else {
+      this.player.setFlipX(this.facing < 0);
+      if(!onGround) this.player.play(b.velocity.y < 0 ? 'ninja-jump' : 'ninja-fall', true);
+      else if(L || R) this.player.play('ninja-run', true);
+      else this.player.play('ninja-idle', true);
+    }
+    if(onGround && this.player.y < 600){ this.lastSafe.x = this.player.x; this.lastSafe.y = this.player.y - 6; }
+    if(this.player.y > this.killY){ this.player.setPosition(this.lastSafe.x, this.lastSafe.y); b.setVelocity(0, 0); }
+
+    // sky gradient pans slowly by scroll position — the colour you see is set by WHERE you are in the
+    // world (the zone), not by the camera chasing the hero. Mountains/treelines parallax on their own.
+    this.sky.tilePositionX = this.cameras.main.scrollX * 0.15;
+  }
+}
+
 new Phaser.Game({
   type: Phaser.AUTO,
   width: W, height: H,
@@ -548,6 +783,6 @@ new Phaser.Game({
   pixelArt: true,
   backgroundColor: '#5c94fc',
   physics: { default: 'arcade', arcade: { gravity: { y: 1150 }, debug: false } },
-  scene: [BootScene, TitleScene, PlayScene],
+  scene: [BootScene, TitleScene, PlayScene, ExploreScene],
   scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
 });

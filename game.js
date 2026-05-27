@@ -26,7 +26,8 @@ class BootScene extends Phaser.Scene {
     this.load.image('pa_grass', PA + 'grass.png');
     this.load.image('pa_dirt',  PA + 'dirt.png');
     this.load.image('ladder',   PA + 'ladder.png');
-    this.load.image('bg_grad',  'assets/glitch/delta_far.png');   // sky gradient — whole-world backdrop
+    this.load.image('bg_grad',  'assets/glitch/delta_far.png');   // sky gradient (unused now)
+    this.load.image('bg_blue',  'assets/pixel-adventure/Background/Blue.png');   // tiling Pixel-Adventure blue backdrop
     this.load.image('lair_far', 'assets/glitch/lair_far.png');    // dark cave backdrop for the lair
     this.load.image('sea',      'assets/magic-cliffs/sea.png');   // delta water
     ['meadow_07','meadow_08','meadow_09','meadow_10','woods_00','woods_01','woods_02','woods_03']  // the 8 in elements/woods/
@@ -583,10 +584,8 @@ class ExploreScene extends Phaser.Scene {
     this.BIOMES.forEach(([x1, x2, key, label]) =>
       this.add.text((x1 + x2) / 2, 150, label, { fontFamily:'monospace', fontSize:'20px', color:'#ffffff' })
         .setOrigin(0.5).setStroke('#202020', 5).setDepth(-1));
-    // Background — two flat, WORLD-ANCHORED bands (not parallax, not a gradient): blue sky above the meadow
-    // ground line, tan earth below it. Fixed in world space, so climbing the mountain leaves the ground
-    // behind (all sky) and dropping into the pit reads as going down into the earth (all tan).
-    this.add.tileSprite(0, 0, W, H, 'bg_grad').setOrigin(0).setScrollFactor(0).setDepth(-100);   // the delta_far gradient — STATIC, pinned to the screen (doesn't move with the world)
+    // Background — the tiling Pixel-Adventure blue backdrop, STATIC (pinned to the screen, doesn't move with the world).
+    this.add.tileSprite(0, 0, W, H, 'bg_blue').setOrigin(0).setScrollFactor(0).setDepth(-100);
     // LAIR — its own dark cave backdrop, world-anchored. Starts exactly at the gold floor (x8800), so the
     // whole climb stays bright sky and the cave only takes over once you reach the golden ground up top.
     // Tall (fills the open chamber above the floor where Emma flies).
@@ -738,7 +737,7 @@ class ExploreScene extends Phaser.Scene {
     if(window.PortChat) window.PortChat.reset();   // clean-slate NPC chats each playthrough (death = fresh start)
 
     // --- combat state ---
-    this.hp = 2; this.invuln = 0;
+    this.hp = 2; this.invuln = 0; this.bossDead = { roq: false, emma: false };   // a slain boss → fed to the OTHER boss's chat agent
     this.hasShield = false; this.tookShield = false; this.carriedShield = null; this.shieldDropping = false;
     this.boltToggle = false;
     this.swingHits = new Set(); this.attacking = false; this.attackElapsed = 0; this.FRAME_MS = 55;
@@ -785,8 +784,8 @@ class ExploreScene extends Phaser.Scene {
     ebody(flyFoe('ghost', 5000, -70),  60, 40, 14, 12);           //   two more drift down from off the top of the screen
     ebody(flyFoe('ghost', 6900, -40),  60, 40, 14, 12);
     ebody(flyFoe('ghost', 7480, GT - 320), 60, 40, 14, 12);       //   one haunts the mountain climb
-    ebody(flyFoe('snail', 7682, GT - 270, { vdir: 1 }),  44, 30, 16, 9);   // MOUNTAIN — Snails crawl the chimney walls (head faces travel; angle set in update)
-    ebody(flyFoe('snail', 7800, GT - 270, { vdir: -1 }), 44, 30, 16, 9);
+    ebody(flyFoe('snail', 7682, GT - 270, { vdir: 1,  baseAngle: 90 }),  44, 30, 16, 9);   // MOUNTAIN — Snail on the LEFT wall (belly-left)
+    ebody(flyFoe('snail', 7800, GT - 270, { vdir: -1, baseAngle: -90 }), 44, 30, 16, 9);   //   Snail on the RIGHT wall (belly-right)
     ebody(flyFoe('bat', 7440, GT - 300), 72, 34, 10, 13);         //   Bats dart along the climb (small + fast) — three up the mountain
     ebody(flyFoe('bat', 8080, GT - 620), 72, 34, 10, 13);
     ebody(flyFoe('bat', 8600, GT - 880), 72, 34, 10, 13);
@@ -833,6 +832,7 @@ class ExploreScene extends Phaser.Scene {
     const hp = e.getData('hp') - 1; e.setData('hp', hp);
     if(hp > 0){ e.setTintFill(0xffffff); this.time.delayedCall(100, () => { if(e.active) e.clearTint(); }); return; }
     e.setData('dying', true); e.body.enable = false;
+    const dk = e.getData('kind'); if(dk === 'pig') this.bossDead.roq = true; else if(dk === 'skull') this.bossDead.emma = true;   // mark a fallen boss
     const gold = e.getData('gold'), ex = e.x, ey = e.y; e.setTintFill(0xffffff);
     // disableBody (hide + deactivate) instead of destroy() — destroying a sprite that's in a collider vs the shared
     // this.solids array can leave a dangling collider; disabling keeps it clean and the foe is gone all the same.
@@ -1038,10 +1038,9 @@ class ExploreScene extends Phaser.Scene {
     this.enemies.getChildren().forEach(e => {
       if(!e.active || e.getData('dying')) return;
       const kind = e.getData('kind');
-      if(e.getData('boss') && !e.getData('greeted') && Phaser.Math.Distance.Between(this.player.x, this.player.y, e.x, e.y) < 340){
+      if(e.getData('boss') && !e.getData('greeted') && Phaser.Math.Distance.Between(this.player.x, this.player.y, e.x, e.y) < 320){
         e.setData('greeted', true);
-        this.showGreet(e, kind === 'pig' ? "Ho there, hero! Got work for you — press S to talk."
-                                         : "Lower your blade, little one… let's talk. Press S.");
+        this.openChat(kind === 'pig' ? 'roq' : 'emma');   // first approach to a boss → the conversation opens itself, so it's impossible to miss
       }
       if(kind === 'pig'){                       // Roq — passive until provoked, then lobs rocks in a fixed arc
         if(e.getData('aggro') && time > (e.getData('nextFire') || 0)){
@@ -1106,19 +1105,17 @@ class ExploreScene extends Phaser.Scene {
         let dir = e.getData('dir');
         if(e.x > e.getData('homeX') + 80) dir = -1; else if(e.x < e.getData('homeX') - 80) dir = 1;
         e.setData('dir', dir); e.body.setVelocityX(dir * 40); e.setFlipX(dir > 0);
-      } else if(kind === 'snail'){              // Snail — clings to a chimney wall, crawls up/down, head facing its travel
+      } else if(kind === 'snail'){              // Snail — clings to its wall (constant base angle → never flips over), head leads its crawl
         let vdir = e.getData('vdir');
         if(e.y > e.getData('homeY') + 150) vdir = -1; else if(e.y < e.getData('homeY') - 150) vdir = 1;
         e.setData('vdir', vdir); e.body.setVelocity(0, vdir * 48);
-        e.setAngle(vdir === 1 ? 90 : -90);
-      } else if(kind === 'bat'){                // Bat — roosts, then darts FAST at you when you climb near, peels back
-        if(Phaser.Math.Distance.Between(this.player.x, this.player.y, e.x, e.y) < 340 && time > (e.getData('nextSwoop') || 0)){
-          e.setData('swoopUntil', time + 600); e.setData('nextSwoop', time + 1700);
-        }
-        if(time < (e.getData('swoopUntil') || 0)){
+        const base = e.getData('baseAngle'); e.setAngle(base); e.setFlipX((base > 0) === (vdir > 0));
+      } else if(kind === 'bat'){                // Bat — HUNTS: tracks and dives at you continuously, weaving like a swoop, no retreat
+        if(Phaser.Math.Distance.Between(this.player.x, this.player.y, e.x, e.y) < 620){
           const a = Math.atan2(this.player.y - e.y, this.player.x - e.x);
-          e.body.setVelocity(Math.cos(a) * 240, Math.sin(a) * 240);
-        } else { e.body.setVelocity((e.getData('homeX') - e.x) * 3, (e.getData('homeY') - e.y) * 3.5); }
+          const wob = Math.sin(time / 150 + e.getData('homeX')) * 120;   // weave perpendicular to the dive → a swooping pursuit
+          e.body.setVelocity(Math.cos(a) * 195 + Math.cos(a + Math.PI / 2) * wob, Math.sin(a) * 195 + Math.sin(a + Math.PI / 2) * wob);
+        } else { e.body.setVelocity((e.getData('homeX') - e.x) * 2, (e.getData('homeY') - e.y) * 2); }   // drift back only after you leave the mountain
         e.setFlipX(this.player.x > e.x);
       } else if(kind === 'bird'){               // BlueBird — cruises back and forth over the delta (a timing obstacle)
         let dir = e.getData('dir');

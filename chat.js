@@ -75,7 +75,13 @@
     titleEl.textContent = cfg.name;
     badgeEl.textContent = cfg.name + ' runs on ' + cfg.model;
     logEl.innerHTML = '';
-    if (sessions[npc].length === 0) sessions[npc].push({ role: 'npc', text: cfg.opener });
+    if (sessions[npc].length === 0) {
+      let opener = cfg.opener;
+      const bd = scene && scene.bossDead;
+      if (bd && npc === 'roq' && bd.emma) opener = "Hero! You did it — Emma's finished, the mountain's gone quiet, and Port Foliopolis is yours to toast. Come here, let's settle up proper.";
+      if (bd && npc === 'emma' && bd.roq) opener = "So. The hog is dead, and still you climb to me, little hero. No one left to send you now… what is it you truly want?";
+      sessions[npc].push({ role: 'npc', text: opener });
+    }
     sessions[npc].forEach(m => bubble(m.role === 'you' ? 'you' : 'npc', m.text, cfg.accent));
     root.style.display = 'flex';
     if (scene) { scene.input.keyboard.enabled = false; scene.scene.pause(); }   // world idles while talking
@@ -116,7 +122,7 @@
   async function respond(which, history, text) {
     const r = await fetch('/api/chat', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ npc: which, history, message: text, bossLog: which === 'phil' ? bossLog : undefined }),
+      body: JSON.stringify({ npc: which, history, message: text, bossLog: which === 'phil' ? bossLog : undefined, dead: (scene && scene.bossDead) || null }),
     });
     if (!r.ok) throw new Error('chat ' + r.status);
     return (await r.json()).reply;

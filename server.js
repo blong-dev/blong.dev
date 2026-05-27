@@ -56,7 +56,7 @@ async function callGroq(model, persona, history){
 }
 
 async function handleChat(req, res, body){
-  const { npc, history = [], bossLog } = body || {};
+  const { npc, history = [], bossLog, dead } = body || {};
   const cfg = NPC[npc];
   if (!cfg) return json(res, 400, { reply: '(no such voice here)' });
 
@@ -68,6 +68,10 @@ async function handleChat(req, res, body){
   if (globalCount >= GLOBAL_DAY) return json(res, 200, { reply: "*yawns* …too many voices today. Let me sleep — back tomorrow." });
 
   let persona = cfg.persona;
+  if (dead) {   // a rival boss has fallen — the survivor's agent learns of it
+    if (npc === 'roq' && dead.emma) persona += "\n\nIN-WORLD NEWS (true right now): the hero has already slain Emma the demilich up the mountain — your problem is gone and the bargain is fulfilled. React in character: triumphant and relieved, ready to pay up and praise the hero; the town and trade are saved. Do not deny it.";
+    if (npc === 'emma' && dead.roq) persona += "\n\nIN-WORLD NEWS (true right now): the hero has slain Roq, the grasping hog of Port Foliopolis, down in the town. React in character — wry, cold, or darkly amused as you see fit; the fool is gone and you know it. Do not deny it.";
+  }
   if (npc === 'phil' && Array.isArray(bossLog) && bossLog.length){
     const last = bossLog[bossLog.length - 1];
     const txt = last.lines.map(l => (l.role === 'you' ? 'Hero' : last.who) + ': ' + l.text).join(' / ');

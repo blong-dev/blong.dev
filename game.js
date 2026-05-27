@@ -27,7 +27,16 @@ class BootScene extends Phaser.Scene {
     this.load.image('pa_dirt',  PA + 'dirt.png');
     this.load.image('ladder',   PA + 'ladder.png');
     this.load.image('bg_grad',  'assets/glitch/delta_far.png');   // sky gradient — whole-world backdrop
+    this.load.image('lair_far', 'assets/glitch/lair_far.png');    // dark cave backdrop for the lair
     this.load.image('sea',      'assets/magic-cliffs/sea.png');   // delta water
+    ['meadow_07','meadow_08','meadow_09','meadow_10','woods_00','woods_01','woods_02','woods_03']  // the 8 in elements/woods/
+      .forEach((f, i) => this.load.image('tree' + i, 'assets/glitch/elements/woods/' + f + '.png'));
+    ['meadow_02','meadow_08','meadow_12','meadow_15','meadow_17','meadow_19']  // elements/meadow/
+      .forEach((f, i) => this.load.image('md' + i, 'assets/glitch/elements/meadow/' + f + '.png'));
+    ['lair_02','lair_03','lair_04','lair_05','lair_06','lair_08']                   // lair floor: stalagmites + boulders
+      .forEach((f, i) => this.load.image('lf' + i, 'assets/glitch/elements/lair/' + f + '.png'));
+    ['lair_00','lair_01','lair_07']                                                 // lair ceiling: hanging stalactites
+      .forEach((f, i) => this.load.image('lc' + i, 'assets/glitch/elements/lair/' + f + '.png'));
     ['ninja','pink','mask','virtual'].forEach(c => {
       ['idle','run','jump','fall','djump','wall'].forEach(a => {
         this.load.spritesheet(`${c}_${a}`, PA + `${c}_${a}.png`, { frameWidth:96, frameHeight:96 });
@@ -557,8 +566,8 @@ class ExploreScene extends Phaser.Scene {
   create(){
     const GT = 410, WORLD_W = 9600;
     this.killY = 880;                                       // just below the secret home base (820) → snappier respawns
-    this.physics.world.setBounds(0, -800, WORLD_W, 2000);
-    this.cameras.main.setBounds(0, -800, WORLD_W, 2000);   // headroom above the tall two-chimney climb to the summit lair
+    this.physics.world.setBounds(0, -1200, WORLD_W, 2400);
+    this.cameras.main.setBounds(0, -1200, WORLD_W, 2400);  // tall headroom — the lair is an open chamber for Emma to fly + swoop
     this.cameras.main.setBackgroundColor(PAL.sky);
 
     // biome ranges (drive the labels + the parallax-bg swapping)
@@ -575,16 +584,20 @@ class ExploreScene extends Phaser.Scene {
     // Background — the delta_far painterly gradient (blue → warm horizon) as the whole-world sky:
     // screen-pinned, fills the viewport, sits behind everything. Start of the rebuilt background.
     this.add.tileSprite(0, 0, W, H, 'bg_grad').setOrigin(0).setScrollFactor(0).setDepth(-100);
+    // LAIR — its own dark cave backdrop, world-anchored. Starts exactly at the gold floor (x8800), so the
+    // whole climb stays bright sky and the cave only takes over once you reach the golden ground up top.
+    // Tall (fills the open chamber above the floor where Emma flies).
+    this.add.image(8800, -1250, 'lair_far').setOrigin(0).setDisplaySize(880, 1350).setDepth(-90);
 
     // player (default hero for roaming)
     this.player = this.physics.add.sprite(80, GT - 130, 'ninja_idle');
-    this.player.body.setSize(69, 72).setOffset(12, 24);
+    this.player.body.setSize(48, 72).setOffset(25, 24);   // footprint matches the FEET (x21-77), not the wide arms → no edge air-walk
     this.player.body.setMaxVelocity(220, 950);
     this.player.play('ninja-idle');
     this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
     this.cameras.main.setDeadzone(140, 240);   // roam-box, not glued to center; headroom (above) handles the mountain top
     this.lastSafe = { x: 80, y: GT - 130 };
-    this.facing = 1; this.jumpsUsed = 0;
+    this.facing = 1; this.jumpsUsed = 0; this.camOffY = 0;
 
     const floor = (x1, x2, topY, topTile, fillTile, fillH = 240) => {
       const w = x2 - x1;
@@ -628,6 +641,8 @@ class ExploreScene extends Phaser.Scene {
       .forEach(([a, b, y]) => log(a, b, y));
     floor(4800, 5950, GT, 'pa_woods_top', 'pa_woods_fill');           // WOODS — orange/brown (pit gap 5950–6300)
     floor(6300, 7200, GT, 'pa_woods_top', 'pa_woods_fill');
+    log(6960, 7160, GT - 250);                                        // woods→mountain transition perch — too high to reach
+                                                                       //   from the ground; only by jumping off the last floating log (@6620-6820)
     // MOUNTAIN — a ninja wall-climb. No steps: two facing rock walls form a chimney you scale by
     // wall-jumping between them. The right wall gates the way up, so the climb is mandatory; the base
     // catches misses. Top out onto the summit plateau and into the lair.
@@ -653,6 +668,56 @@ class ExploreScene extends Phaser.Scene {
     [[760, 940, GT - 110], [1180, 1340, GT - 175], [1520, 1660, GT - 120],
      [5080, 5260, GT - 130], [5480, 5660, GT - 205], [6620, 6820, GT - 140]]
       .forEach(([a, b, y]) => log(a, b, y));
+
+    // WOODS — a thick forest scattered behind the play area from the 8 elements/woods/ trees (leafy +
+    // pines). Two depth bands; nothing placed over the pit (5950–6300) so no trees float over the gap.
+    const R = new Phaser.Math.RandomDataGenerator(['port-foliopolis']);   // SEEDED → identical scatter every load
+    const rnd = (a, c) => R.realInRange(a, c);
+    const pick = (n) => R.integerInRange(0, n - 1);
+    const chance = (p) => R.frac() < p;
+    for (let i = 0; i < 75; i++){
+      let x = rnd(4810, 6840); if (x > 5950) x += 350;             // skip the pit
+      const key = 'tree' + pick(8);
+      const far = chance(0.5);
+      const t = this.add.image(x, GT + rnd(-4, 18), key).setOrigin(0.5, 1)
+        .setScale(far ? rnd(0.22, 0.38) : rnd(0.40, 0.55))
+        .setDepth(far ? -25 : -12).setAlpha(far ? rnd(0.5, 0.7) : rnd(0.9, 1));
+      if (far) t.setTint(0xb9c4d6);
+      if (chance(0.5)) t.setFlipX(true);
+    }
+
+    // MOUNTAIN BASE — forest the foot with the four pines (woods_00–03 = tree4–7), same scatter
+    for (let i = 0; i < 30; i++){
+      const key = 'tree' + (4 + pick(4));
+      const far = chance(0.5);
+      const t = this.add.image(rnd(7220, 7800), GT + rnd(-4, 18), key).setOrigin(0.5, 1)
+        .setScale(far ? rnd(0.22, 0.38) : rnd(0.40, 0.55))
+        .setDepth(far ? -25 : -12).setAlpha(far ? rnd(0.5, 0.7) : rnd(0.9, 1));
+      if (far) t.setTint(0xb9c4d6);
+      if (chance(0.5)) t.setFlipX(true);
+    }
+
+    // MEADOW — ground cover (grass, ferns, flowers) + the odd tree/mound, from elements/meadow/ (sparse)
+    for (let i = 0; i < 22; i++){
+      const key = 'md' + pick(6);
+      const far = chance(0.4);
+      const t = this.add.image(rnd(40, 2360), GT + rnd(-2, 16), key).setOrigin(0.5, 1)
+        .setScale(far ? rnd(0.30, 0.45) : rnd(0.45, 0.65))
+        .setDepth(far ? -25 : -12).setAlpha(far ? rnd(0.6, 0.8) : rnd(0.92, 1));
+      if (far) t.setTint(0xcfe0f0);
+      if (chance(0.5)) t.setFlipX(true);
+    }
+    // LAIR — stalagmites + boulders rising off the gold floor, and stalactites hanging from the chamber roof
+    for (let i = 0; i < 12; i++){
+      const t = this.add.image(rnd(8830, 9570), GT - 910 + rnd(-2, 10), 'lf' + pick(6))
+        .setOrigin(0.5, 1).setScale(rnd(0.30, 0.55)).setDepth(-20);
+      if (chance(0.5)) t.setFlipX(true);
+    }
+    for (let i = 0; i < 7; i++){
+      const t = this.add.image(rnd(8830, 9570), rnd(-905, -855), 'lc' + pick(3))
+        .setOrigin(0.5, 0).setScale(rnd(0.5, 0.8)).setDepth(-25);
+      if (chance(0.5)) t.setFlipX(true);
+    }
 
     this.cursors = this.input.keyboard.createCursorKeys();
     this.keySpace = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
@@ -715,8 +780,13 @@ class ExploreScene extends Phaser.Scene {
       else if(L || R) this.player.play('ninja-run', true);
       else this.player.play('ninja-idle', true);
     }
-    if(onGround && this.player.y < 600){ this.lastSafe.x = this.player.x; this.lastSafe.y = this.player.y - 6; }
+    if(onGround && this.player.y < 600){ this.lastSafe.x = this.player.x; this.lastSafe.y = this.player.y - 48; }   // respawn a tile higher → drop in cleanly
     if(this.player.y > this.killY){ this.player.setPosition(this.lastSafe.x, this.lastSafe.y); b.setVelocity(0, 0); }
+
+    // in the lair, ease the camera down so the tall chamber above the floor (Emma's fly space) is in view
+    const offTarget = this.player.x > 8750 ? 110 : 0;   // drop less so the hero's feet / the ground stay in view
+    this.camOffY += (offTarget - this.camOffY) * 0.05;
+    this.cameras.main.setFollowOffset(0, this.camOffY);
   }
 }
 

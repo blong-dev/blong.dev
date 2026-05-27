@@ -581,7 +581,7 @@ class ExploreScene extends Phaser.Scene {
     // Background = world-anchored parallax. Colours belong to the zone's PLACE in the world (you scroll
     // through them), not to the camera: a per-zone sky gradient + far mountains + mid treelines, all in
     // world space behind the near scatter. No camera-triggered crossfade.
-    this.buildParallax(WORLD_W);
+    this.buildParallax(WORLD_W, GT);
 
     // player (default hero for roaming)
     this.player = this.physics.add.sprite(80, GT - 130, 'ninja_idle');
@@ -626,11 +626,18 @@ class ExploreScene extends Phaser.Scene {
     floor(6300, 7200, GT, 'pa_woods_top', 'pa_woods_fill');
     // MOUNTAIN — a dramatic vertical climb: rising ledges (double-jumpable) with solid rock faces
     // you can wall-slide down and wall-jump off; the scattered rock spires sell the crag.
-    floor(7200, 7760, GT,        'pa_mtn', 'pa_mtn');                 // base ledge (arrive from woods)
-    floor(7760, 8200, GT - 160,  'pa_mtn', 'pa_mtn');                 // ledge 2  (rise 160)
-    floor(8200, 8800, GT - 285,  'pa_mtn', 'pa_mtn');                 // ledge 3 → lair approach (rise 125)
-    wall(7760, GT - 160, 160);                                       // ledge-2 rock face
-    wall(8200, GT - 285, 125);                                       // ledge-3 rock face
+    // MOUNTAIN — a hard vertical climb. A full catch-floor at the base means every miss drops you here
+    // and you start the ascent over. Narrow ledges + a rock wall (wall-slide/jump) carry you to the summit.
+    floor(7200, 8800, GT, 'pa_mtn', 'pa_mtn');                       // catch floor (whole base)
+    plat(7330, 7425, GT - 165);                                      // P1  — ascent begins
+    plat(7560, 7655, GT - 320);                                      // P2
+    plat(7350, 7445, GT - 455);                                      // P3  (zig back to the left)
+    plat(7600, 7695, GT - 490);                                      // P4  — summit
+    wall(7290, GT - 490, 490);                                       // left rock face — wall-slide / wall-jump
+    plat(7860, 7965, GT - 400);                                      // P5  — descent to the lair begins
+    plat(8130, 8250, GT - 340);                                      // P6
+    plat(8400, 8530, GT - 285);                                      // P7
+    floor(8530, 8800, GT - 285, 'pa_mtn', 'pa_mtn');                 // lair approach lip
     floor(8800, 9600, GT - 285, 'pa_gold', 'pa_gold');               // LAIR — gold plate floor
     floor(5820, 6380, 820, 'pa_mtn', 'pa_mtn');                       // HOME BASE — secret chamber (rock)
     this.add.text(6100, 760, '★ 1-UP ★', { fontFamily:'monospace', fontSize:'15px', color:'#fcd800' })
@@ -651,36 +658,52 @@ class ExploreScene extends Phaser.Scene {
   // World-anchored parallax backdrop. Wide pieces (distant mountain ranges + their green foothills, and
   // big treelines) are laid out in world space and parallaxed by depth, so the scenery belongs to the
   // zone's PLACE in the world. Vertically screen-locked (scrollFactorY 0) → a stable distant horizon.
-  buildParallax(WORLD_W){
+  buildParallax(WORLD_W, GT){
     this.sky = this.add.tileSprite(0, 0, W, H, 'sky_zones').setOrigin(0).setScrollFactor(0).setDepth(-50);
     const rnd = (a, c) => a + Math.random() * (c - a);
     const zoneAt = (x) => (this.BIOMES.find(z => x >= z[0] && x < z[1]) || this.BIOMES[0])[2];
-    const layer = (factor, depth, baseY, poolFor, hLo, hHi, overlap, gap, aLo, aHi, tint) => {
+    const layer = (factor, depth, baseYFor, poolFor, hLo, hHi, overlap, gap, aLo, aHi, tint, sfY = 0) => {
       let rx = 100;
       while (rx < WORLD_W){
-        const pool = poolFor(zoneAt(rx));
+        const z = zoneAt(rx), pool = poolFor(z, rx);
         if (pool && pool.length){
           const key = pool[Math.floor(Math.random() * pool.length)];
           const src = this.textures.get(key).getSourceImage();
           const sc = rnd(hLo, hHi) / src.height;                 // scale each piece to a target on-screen height
-          const img = this.add.image(rx * factor, baseY, key).setOrigin(0.5, 1).setScale(sc)
-            .setScrollFactor(factor, 0).setDepth(depth).setAlpha(rnd(aLo, aHi));
+          const img = this.add.image(rx * factor, baseYFor(z), key).setOrigin(0.5, 1).setScale(sc)
+            .setScrollFactor(factor, sfY).setDepth(depth).setAlpha(rnd(aLo, aHi));
           if (tint) img.setTint(tint);
           if (Math.random() < 0.5) img.setFlipX(true);
           rx += (src.width * sc * overlap) / factor;             // step in real-X (layer is compressed by `factor`)
         } else rx += gap;
       }
     };
-    // FAR mountains (incl. the green foothill that reads as a big rolling hill) — distant + hazed
-    layer(0.30, -40, 300,
-      (z) => ({ meadow:['bk_mtn_0','bk_mtn_1'], delta:['bk_mtn_1'], woods:['bk_mtn_0'],
+    // Mountains live only in the meadow and the mountain/cave area — NOT the delta or woods pools. Parallax
+    // then keeps the open-water delta clear, and the peaks loom in naturally as you approach through the woods.
+    // FAR — small distant ranges, hazed (snowy rock at the peak)
+    layer(0.28, -44, () => 292,
+      (z) => ({ meadow:['bk_mtn_1'], delta:[], woods:[],
                 mountain:['bk_mtn_2','bk_mtn_1'], lair:[] }[z]),
-      160, 240, 0.82, 1700, 0.82, 0.95, 0xecf1f7);
-    // MID treelines — the bigger trees, per forest zone (fuller now)
-    layer(0.55, -34, 322,
-      (z) => ({ meadow:['bk_treeline_leafy'], delta:[],
-                woods:['bk_treeline_pine0','bk_treeline_pine1'], mountain:['bk_treeline_pine1'], lair:[] }[z]),
-      120, 190, 0.58, 700, 0.9, 1, null);
+      120, 180, 0.85, 1800, 0.7, 0.86, 0xeef2f7);
+    // MID-FAR — the big mountain (incl. its green foothill) in the midground; rocky peaks up top
+    layer(0.46, -40, () => 306,
+      (z) => ({ meadow:['bk_mtn_0'], delta:[], woods:[],
+                mountain:['bk_mtn_2','bk_mtn_0'], lair:[] }[z]),
+      210, 300, 0.8, 2100, 0.82, 0.95, 0xe1e8f2);
+    // MID treelines — meadow deciduous; mountain pines thin to rock near the lair. (Woods handled below.)
+    layer(0.55, -34, () => 322,
+      (z, x) => {
+        if (z === 'meadow') return ['bk_treeline_leafy'];
+        if (z === 'mountain') return x < 7800 ? ['bk_treeline_pine1'] : [];   // phase trees out toward the summit
+        return [];                                                            // delta + woods + lair: none here
+      },
+      160, 250, 0.46, 700, 0.9, 1, null);
+    // WOODS forest — pulled to the FOREGROUND (scrollFactor 1, world-locked) and packed LOW so the canopy
+    // fills the screen down to the ground: a solid wall of pines you can't see beneath. Sits behind the
+    // hero + terrain but in front of everything else.
+    layer(1.0, -8, () => GT + 46,
+      (z) => z === 'woods' ? ['bk_treeline_pine0', 'bk_treeline_pine0', 'bk_treeline_pine1'] : [],
+      300, 430, 0.3, 700, 0.95, 1, null, 1);
     // CAVE = hard stop: a dark slab in front of the parallax bg from the lair entrance on, so the cave
     // reads as a sealed chamber (the sky gradient underneath stays the mountain colour). Floor + the
     // lair's own stalagmites/stalactites still render in front of it.
@@ -691,10 +714,9 @@ class ExploreScene extends Phaser.Scene {
   // species + density evolve with the biome (with soft blend zones at the borders, so it never snaps).
   scatterBg(GT, WORLD_W){
     const rnd = (a, c) => a + Math.random() * (c - a);
-    const groundY = (x) => {                         // approx terrain top at X, so scenery hugs the climb
-      if (x >= 8200) return GT - 285;                //   ledge 3 + lair
-      if (x >= 7760) return GT - 160;                //   ledge 2
-      return GT;                                     //   meadow / delta / woods / base ledge
+    const groundY = (x) => {                         // approx terrain top at X — scenery sits on the mountain base
+      if (x >= 8530) return GT - 285;                //   lair lip + lair
+      return GT;                                     //   everything else (incl. the mountain catch-floor base)
     };
     const poolAt = (x) => {                           // biome pool, blended near borders + remixed for mixed zones
       let b = this.BIOMES.find(z => x >= z[0] && x < z[1]) || this.BIOMES[0];
@@ -702,8 +724,11 @@ class ExploreScene extends Phaser.Scene {
       if (x - b[0] < Z && idx > 0 && Math.random() < (1 - (x - b[0]) / Z) * 0.5) b = this.BIOMES[idx - 1];
       else if (b[1] - x < Z && idx < this.BIOMES.length - 1 && Math.random() < (1 - (b[1] - x) / Z) * 0.5) b = this.BIOMES[idx + 1];
       let key = b[2];
-      if (key === 'delta')    key = Math.random() < 0.5 ? 'meadow' : 'woods';        // delta borrows its neighbours
-      if (key === 'mountain') key = Math.random() < 0.55 ? 'mountain' : 'woods';     // rocky, but trees cling on
+      if (key === 'delta') key = Math.random() < 0.5 ? 'meadow' : 'woods';            // delta borrows its neighbours
+      if (key === 'mountain'){                                                        // trees fade to rock toward the lair
+        const treeP = Math.max(0, 0.5 * (1 - (x - 7200) / 1000));
+        key = Math.random() < treeP ? 'woods' : 'mountain';
+      }
       return key;
     };
     const zoneAt = (x) => (this.BIOMES.find(z => x >= z[0] && x < z[1]) || this.BIOMES[0])[2];

@@ -105,7 +105,7 @@ class TitleScene extends Phaser.Scene {
         .setOrigin(0.5).setStroke('#202020', 4);
       spr.on('pointerover', ()=> spr.setScale(1.38));
       spr.on('pointerout',  ()=> spr.setScale(1.2));
-      spr.on('pointerdown', ()=> this.scene.start('play', {name:h.name, char:h.char}));
+      spr.on('pointerdown', ()=> this.scene.start('explore', {name:h.name, char:h.char}));
     });
     this.add.text(W/2, H-28, '←→ move  ·  space jump  ·  A attack  ·  S speak  ·  ↑↓ ladders',
       {fontFamily:'monospace', fontSize:'13px', color:'#202020'}).setOrigin(0.5);
@@ -563,6 +563,7 @@ class PlayScene extends Phaser.Scene {
 // ============================================================
 class ExploreScene extends Phaser.Scene {
   constructor(){ super('explore'); }
+  init(data){ this.heroChar = (data && data.char) || 'ninja'; this.heroName = (data && data.name) || ''; }
   create(){
     const GT = 410, WORLD_W = 9600;
     this.killY = 880;                                       // just below the secret home base (820) → snappier respawns
@@ -590,10 +591,10 @@ class ExploreScene extends Phaser.Scene {
     this.add.image(8800, -1250, 'lair_far').setOrigin(0).setDisplaySize(880, 1350).setDepth(-90);
 
     // player (default hero for roaming)
-    this.player = this.physics.add.sprite(80, GT - 130, 'ninja_idle');
+    this.player = this.physics.add.sprite(80, GT - 130, this.heroChar + '_idle');
     this.player.body.setSize(48, 72).setOffset(25, 24);   // footprint matches the FEET (x21-77), not the wide arms → no edge air-walk
     this.player.body.setMaxVelocity(220, 950);
-    this.player.play('ninja-idle');
+    this.player.play(this.heroChar + '-idle');
     this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
     this.cameras.main.setDeadzone(140, 240);   // roam-box, not glued to center; headroom (above) handles the mountain top
     this.lastSafe = { x: 80, y: GT - 130 };
@@ -721,7 +722,7 @@ class ExploreScene extends Phaser.Scene {
 
     this.cursors = this.input.keyboard.createCursorKeys();
     this.keySpace = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
-    this.add.text(12, 12, 'EXPLORE  ·  ←→ move  ·  space ×2 jump  ·  fall = respawn',
+    this.add.text(12, 12, (this.heroName || 'EXPLORE') + '   ←→ move · space ×2 jump · ↑↓ ladder',
       { fontFamily:'monospace', fontSize:'13px', color:'#ffffff' }).setScrollFactor(0).setStroke('#202020', 4).setDepth(50);
   }
 
@@ -748,7 +749,7 @@ class ExploreScene extends Phaser.Scene {
         if(this.player.y <= lad.top && vy < 0) vy = 0;         // clamp at the top — press → to step onto the ledge
         if(this.player.y >= lad.bottom && vy > 0) vy = 0;
         b.setVelocity(0, vy); this.jumpsUsed = 0;
-        this.player.play('ninja-idle', true); this.player.setFlipX(this.facing < 0);
+        this.player.play(this.heroChar + '-idle', true); this.player.setFlipX(this.facing < 0);
         return;
       }
     }
@@ -773,12 +774,12 @@ class ExploreScene extends Phaser.Scene {
       else if(this.jumpsUsed < 2){ b.setVelocityY(-JUMP); this.jumpsUsed++; }
     }
 
-    if(sliding){ this.player.play('ninja-wall', true); this.player.setFlipX(wallR); }   // cling, facing away from the wall
+    if(sliding){ this.player.play(this.heroChar + '-wall', true); this.player.setFlipX(wallR); }   // cling, facing away from the wall
     else {
       this.player.setFlipX(this.facing < 0);
-      if(!onGround) this.player.play(b.velocity.y < 0 ? 'ninja-jump' : 'ninja-fall', true);
-      else if(L || R) this.player.play('ninja-run', true);
-      else this.player.play('ninja-idle', true);
+      if(!onGround) this.player.play(b.velocity.y < 0 ? this.heroChar + '-jump' : this.heroChar + '-fall', true);
+      else if(L || R) this.player.play(this.heroChar + '-run', true);
+      else this.player.play(this.heroChar + '-idle', true);
     }
     if(onGround && this.player.y < 600){ this.lastSafe.x = this.player.x; this.lastSafe.y = this.player.y - 48; }   // respawn a tile higher → drop in cleanly
     if(this.player.y > this.killY){ this.player.setPosition(this.lastSafe.x, this.lastSafe.y); b.setVelocity(0, 0); }

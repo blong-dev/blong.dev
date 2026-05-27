@@ -22,10 +22,12 @@ class BootScene extends Phaser.Scene {
     this.load.image('pa_bg',      PA + 'bg_green.png');
     this.load.image('pa_bg_blue', PA + 'pa_bg_blue.png');
     this.load.image('pa_bg_gray', PA + 'pa_bg_gray.png');
-    ['pa_woods_top','pa_woods_fill','pa_mtn','pa_gold','pa_wood'].forEach(k => this.load.image(k, PA + k + '.png'));
+    ['pa_woods_top','pa_woods_fill','pa_mtn','pa_gold','pa_wood','pa_logL','pa_logR'].forEach(k => this.load.image(k, PA + k + '.png'));
     this.load.image('pa_grass', PA + 'grass.png');
     this.load.image('pa_dirt',  PA + 'dirt.png');
     this.load.image('ladder',   PA + 'ladder.png');
+    this.load.image('bg_grad',  'assets/glitch/delta_far.png');   // sky gradient — whole-world backdrop
+    this.load.image('sea',      'assets/magic-cliffs/sea.png');   // delta water
     ['ninja','pink','mask','virtual'].forEach(c => {
       ['idle','run','jump','fall','djump','wall'].forEach(a => {
         this.load.spritesheet(`${c}_${a}`, PA + `${c}_${a}.png`, { frameWidth:96, frameHeight:96 });
@@ -570,7 +572,9 @@ class ExploreScene extends Phaser.Scene {
     this.BIOMES.forEach(([x1, x2, key, label]) =>
       this.add.text((x1 + x2) / 2, 150, label, { fontFamily:'monospace', fontSize:'20px', color:'#ffffff' })
         .setOrigin(0.5).setStroke('#202020', 5).setDepth(-1));
-    // Background intentionally blank — the old Glitch parallax was scrapped; a new one will be built fresh.
+    // Background — the delta_far painterly gradient (blue → warm horizon) as the whole-world sky:
+    // screen-pinned, fills the viewport, sits behind everything. Start of the rebuilt background.
+    this.add.tileSprite(0, 0, W, H, 'bg_grad').setOrigin(0).setScrollFactor(0).setDepth(-100);
 
     // player (default hero for roaming)
     this.player = this.physics.add.sprite(80, GT - 130, 'ninja_idle');
@@ -598,6 +602,16 @@ class ExploreScene extends Phaser.Scene {
       r.body.checkCollision.down = r.body.checkCollision.left = r.body.checkCollision.right = false;
       this.physics.add.collider(this.player, r);
     };
+    const log = (x1, x2, topY) => {            // jump-through wood log with carved swirl end-caps
+      const w = x2 - x1, cap = 48;
+      this.add.tileSprite(x1 + cap, topY, Math.max(0, w - 2 * cap), 24, 'pa_wood').setOrigin(0).setDepth(-4);  // planks
+      this.add.tileSprite(x1, topY, cap, 24, 'pa_logL').setOrigin(0).setDepth(-4);                              // left swirl
+      this.add.tileSprite(x2 - cap, topY, cap, 24, 'pa_logR').setOrigin(0).setDepth(-4);                        // right swirl
+      const r = this.add.rectangle(x1 + w / 2, topY + 12, w, 24).setVisible(false);
+      this.physics.add.existing(r, true); r.body.setSize(w, 24);
+      r.body.checkCollision.down = r.body.checkCollision.left = r.body.checkCollision.right = false;
+      this.physics.add.collider(this.player, r);
+    };
     const wall = (x, topY, h) => {              // solid vertical rock face — ninja wall-slide / wall-jump surface
       this.add.tileSprite(x - 22, topY, 44, h, 'pa_mtn').setOrigin(0).setDepth(-6);
       const r = this.add.rectangle(x, topY + h / 2, 40, h).setVisible(false);
@@ -606,13 +620,12 @@ class ExploreScene extends Phaser.Scene {
     };
 
     floor(0, 2400, GT, 'pa_grass', 'pa_dirt');                        // MEADOW + TOWN
-    plat(1980, 2200, GT - 120);                                       //   Roq's town platform (wood)
-    // DELTA — blue water + wood logs you hop across
-    this.add.rectangle(2400, GT + 6, 2400, 380, 0x3a78c8).setOrigin(0).setDepth(-6).setAlpha(0.6);
-    this.add.rectangle(2400, GT + 6, 2400, 10, 0x9fd6f2).setOrigin(0).setDepth(-6).setAlpha(0.85);   // surface shimmer
-    [[2500,2680,GT],[2780,2900,GT-50],[3000,3180,GT],[3290,3390,GT-80],[3500,3680,GT],
-     [3800,3940,GT-40],[4080,4260,GT],[4380,4500,GT-70],[4620,4810,GT]]   // logs hop up + down, varied spacing
-      .forEach(([a, b, y]) => plat(a, b, y));
+    log(1980, 2200, GT - 120);                                        //   Roq's town platform (wooden log)
+    // DELTA — magic-cliffs sea + wood logs you hop across
+    this.sea = this.add.tileSprite(2400, GT + 6, 2400, 480, 'sea').setOrigin(0).setDepth(-6).setTileScale(3, 3);
+    [[2500,2680,GT],[2780,2920,GT-50],[3020,3180,GT],[3270,3410,GT-80],[3500,3680,GT],
+     [3800,3960,GT-40],[4080,4260,GT],[4360,4500,GT-70],[4620,4810,GT]]   // logs hop up + down, varied spacing
+      .forEach(([a, b, y]) => log(a, b, y));
     floor(4800, 5950, GT, 'pa_woods_top', 'pa_woods_fill');           // WOODS — orange/brown (pit gap 5950–6300)
     floor(6300, 7200, GT, 'pa_woods_top', 'pa_woods_fill');
     // MOUNTAIN — a ninja wall-climb. No steps: two facing rock walls form a chimney you scale by
@@ -636,10 +649,10 @@ class ExploreScene extends Phaser.Scene {
       this.ladder.bottom - this.ladder.top, 'ladder').setOrigin(0).setDepth(-3);
     this.add.text(6100, 760, '★ 1-UP ★', { fontFamily:'monospace', fontSize:'15px', color:'#fcd800' })
       .setOrigin(0.5).setStroke('#202020', 4);
-    // floating platforms — a little verticality + challenge through the run
+    // floating platforms — a little verticality + challenge through the run (wooden logs)
     [[760, 940, GT - 110], [1180, 1340, GT - 175], [1520, 1660, GT - 120],
      [5080, 5260, GT - 130], [5480, 5660, GT - 205], [6620, 6820, GT - 140]]
-      .forEach(([a, b, y]) => plat(a, b, y));
+      .forEach(([a, b, y]) => log(a, b, y));
 
     this.cursors = this.input.keyboard.createCursorKeys();
     this.keySpace = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
@@ -648,6 +661,7 @@ class ExploreScene extends Phaser.Scene {
   }
 
   update(){
+    this.sea.tilePositionX += 0.15;            // gentle current on the delta water
     const b = this.player.body, SPEED = 200, JUMP = 480, CLIMB = 170;
     const L = this.cursors.left.isDown, R = this.cursors.right.isDown;
     const U = this.cursors.up.isDown, D = this.cursors.down.isDown;

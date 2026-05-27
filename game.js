@@ -582,31 +582,36 @@ class ExploreScene extends Phaser.Scene {
     this.BIOMES.forEach(([x1, x2, key, label]) =>
       this.add.text((x1 + x2) / 2, 150, label, { fontFamily:'monospace', fontSize:'20px', color:'#ffffff' })
         .setOrigin(0.5).setStroke('#202020', 5).setDepth(-1));
-    // Background — the delta_far painterly gradient (blue → warm horizon) as the whole-world sky:
-    // screen-pinned, fills the viewport, sits behind everything. Start of the rebuilt background.
-    this.add.tileSprite(0, 0, W, H, 'bg_grad').setOrigin(0).setScrollFactor(0).setDepth(-100);
+    // Background — two flat, WORLD-ANCHORED bands (not parallax, not a gradient): blue sky above the meadow
+    // ground line, tan earth below it. Fixed in world space, so climbing the mountain leaves the ground
+    // behind (all sky) and dropping into the pit reads as going down into the earth (all tan).
+    this.add.tileSprite(0, 0, W, H, 'bg_grad').setOrigin(0).setScrollFactor(0).setDepth(-100);   // the delta_far gradient — STATIC, pinned to the screen (doesn't move with the world)
     // LAIR — its own dark cave backdrop, world-anchored. Starts exactly at the gold floor (x8800), so the
     // whole climb stays bright sky and the cave only takes over once you reach the golden ground up top.
     // Tall (fills the open chamber above the floor where Emma flies).
     this.add.image(8800, -1250, 'lair_far').setOrigin(0).setDisplaySize(880, 1350).setDepth(-90);
 
-    // player (default hero for roaming)
-    this.player = this.physics.add.sprite(80, GT - 130, this.heroChar + '_idle');
+    // player — spawns ABOVE the screen and free-falls into the meadow, like dropping out of the menu
+    this.player = this.physics.add.sprite(80, GT - 540, this.heroChar + '_idle');
     this.player.body.setSize(48, 72).setOffset(25, 24);   // footprint matches the FEET (x21-77), not the wide arms → no edge air-walk
     this.player.body.setMaxVelocity(220, 950);
-    this.player.play(this.heroChar + '-idle');
-    this.cameras.main.startFollow(this.player, true, 0.12, 0.12);
-    this.cameras.main.setDeadzone(140, 240);   // roam-box, not glued to center; headroom (above) handles the mountain top
-    this.lastSafe = { x: 80, y: GT - 130 };
-    this.facing = 1; this.jumpsUsed = 0; this.camOffY = 0;
+    this.player.play(this.heroChar + '-fall');           // already plummeting as the world fades in
+    this.cameras.main.setDeadzone(140, 240);   // roam-box, not glued to center
+    this.cameras.main.setFollowOffset(0, 120);  // start low → lots of sky above (spacious); update() eases it for drops
+    this.cameras.main.setScroll(0, 0);          // HOLD on the meadow (ground low, full sky) so the hero drops in from the top
+    this.followStarted = false;                 // camera only begins tracking once he lands (see update)
+    this.lastSafe = { x: 80, y: GT - 80 };
+    this.facing = 1; this.jumpsUsed = 0; this.camOffY = 120;
 
+    this.solids = [];   // every terrain collider — the hero collides per-rect (below); NPCs/coins/shield collide with the lot
     const floor = (x1, x2, topY, topTile, fillTile, fillH = 240) => {
       const w = x2 - x1;
       this.add.tileSprite(x1, topY + 48, w, fillH, fillTile || topTile).setOrigin(0).setDepth(-7);  // body below (tall = solid cliff)
       this.add.tileSprite(x1, topY, w, 48, topTile).setOrigin(0).setDepth(-5);                       // one full surface tile on top
       const r = this.add.rectangle(x1 + w / 2, topY + 26, w, 52).setVisible(false);
       this.physics.add.existing(r, true); r.body.setSize(w, 52);
-      this.physics.add.collider(this.player, r);
+      this.physics.add.collider(this.player, r); this.solids.push(r);
+      return r;
     };
     const plat = (x1, x2, topY, tile = 'pa_wood') => {   // jump-through platform (wood, or rock for the mountain)
       const w = x2 - x1;
@@ -614,7 +619,8 @@ class ExploreScene extends Phaser.Scene {
       const r = this.add.rectangle(x1 + w / 2, topY + 12, w, 24).setVisible(false);
       this.physics.add.existing(r, true); r.body.setSize(w, 24);
       r.body.checkCollision.down = r.body.checkCollision.left = r.body.checkCollision.right = false;
-      this.physics.add.collider(this.player, r);
+      this.physics.add.collider(this.player, r); this.solids.push(r);
+      return r;
     };
     const log = (x1, x2, topY) => {            // jump-through wood log with carved swirl end-caps
       const w = x2 - x1, cap = 48;
@@ -624,19 +630,23 @@ class ExploreScene extends Phaser.Scene {
       const r = this.add.rectangle(x1 + w / 2, topY + 12, w, 24).setVisible(false);
       this.physics.add.existing(r, true); r.body.setSize(w, 24);
       r.body.checkCollision.down = r.body.checkCollision.left = r.body.checkCollision.right = false;
-      this.physics.add.collider(this.player, r);
+      this.physics.add.collider(this.player, r); this.solids.push(r);
+      return r;
     };
     const wall = (x, topY, h) => {              // solid vertical rock face — ninja wall-slide / wall-jump surface
       this.add.tileSprite(x - 22, topY, 44, h, 'pa_mtn').setOrigin(0).setDepth(-6);
       const r = this.add.rectangle(x, topY + h / 2, 40, h).setVisible(false);
       this.physics.add.existing(r, true); r.body.setSize(40, h);
-      this.physics.add.collider(this.player, r);
+      this.physics.add.collider(this.player, r); this.solids.push(r);
+      return r;
     };
 
     floor(0, 2400, GT, 'pa_grass', 'pa_dirt');                        // MEADOW + TOWN
     log(1980, 2200, GT - 120);                                        //   Roq's town platform (wooden log)
     // DELTA — magic-cliffs sea + wood logs you hop across
-    this.sea = this.add.tileSprite(2400, GT + 6, 2400, 480, 'sea').setOrigin(0).setDepth(-6).setTileScale(3, 3);
+    this.add.rectangle(2400, GT + 6, 2400, 480, 0x3f78d8).setOrigin(0).setDepth(-8);   // BLUE water base (the sea tile itself is opaque teal, so we paint the colour ourselves)
+    this.sea = this.add.tileSprite(2400, GT + 6, 2400, 480, 'sea').setOrigin(0).setDepth(-6).setTileScale(3, 3)
+      .setAlpha(0.4).setTint(0x9ec8ff);                                                  // sea texture kept only as faint pale-blue wave shimmer on top
     [[2500,2680,GT],[2780,2920,GT-50],[3020,3180,GT],[3270,3410,GT-80],[3500,3680,GT],
      [3800,3960,GT-40],[4080,4260,GT],[4360,4500,GT-70],[4620,4810,GT]]   // logs hop up + down, varied spacing
       .forEach(([a, b, y]) => log(a, b, y));
@@ -722,11 +732,184 @@ class ExploreScene extends Phaser.Scene {
 
     this.cursors = this.input.keyboard.createCursorKeys();
     this.keySpace = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
-    this.add.text(12, 12, (this.heroName || 'EXPLORE') + '   ←→ move · space ×2 jump · ↑↓ ladder',
-      { fontFamily:'monospace', fontSize:'13px', color:'#ffffff' }).setScrollFactor(0).setStroke('#202020', 4).setDepth(50);
+    this.keyA = this.input.keyboard.addKey('A');   // attack
+    this.keyS = this.input.keyboard.addKey('S');   // speak / take Emma's shield
+    if(window.PortChat) window.PortChat.reset();   // clean-slate NPC chats each playthrough (death = fresh start)
+
+    // --- combat state ---
+    this.hp = 2; this.invuln = 0;
+    this.hasShield = false; this.tookShield = false; this.carriedShield = null; this.shieldDropping = false;
+    this.boltToggle = false;
+    this.swingHits = new Set(); this.attacking = false; this.attackElapsed = 0; this.FRAME_MS = 55;
+    this.SWING = [ { dx:10, dy:-10, ang:-10 }, { dx:15, dy:-6, ang:50 }, { dx:19, dy:-2, ang:105 }, { dx:21, dy:6, ang:150 } ];
+    this.sword = this.add.image(0, 0, 'sword').setOrigin(0.5, 0.85).setDepth(5).setVisible(false);
+
+    // --- the two main NPCs (no bestiary yet): Roq in the town, Emma flying in the lair chamber ---
+    this.enemies = this.physics.add.group();
+    const roq = this.enemies.create(2090, GT - 170, 'pig_idle');                 // Roq — business hog
+    roq.body.setSize(99, 81).setOffset(6, 9); roq.play('pig-idle');
+    roq.setData({ kind:'pig', gold:5, hp:5, patrol:0, dir:1, homeX:2090, floater:false, dying:false, boss:true, aggro:false });
+    this.physics.add.collider(roq, this.solids);
+    const emma = this.enemies.create(9200, -690, 'skull_idle');                  // Emma — demilich, hovers in the chamber
+    emma.body.setAllowGravity(false); emma.play('skull-idle');
+    emma.setData({ kind:'skull', gold:5, hp:5, patrol:0, dir:1, homeX:9200, homeY:-690, floater:true, dying:false, boss:true, aggro:false });
+    this.add.text(9200, -880, 'EMMA', { fontFamily:'monospace', fontSize:'16px', color:'#e0c060' }).setOrigin(0.5).setStroke('#202020', 4);
+    this.add.text(2090, GT - 250, 'ROQ', { fontFamily:'monospace', fontSize:'13px', color:'#ffffff' }).setOrigin(0.5).setStroke('#202020', 4);
+    this.physics.add.overlap(this.player, this.enemies, (p, e) => this.playerHit(e));   // contact damage (only once a boss is provoked)
+
+    // --- Phil — assistant duck: trails you (warps up if he falls behind in the rough terrain); click/face+S to talk ---
+    this.phil = this.physics.add.sprite(80, GT - 120, 'duck_idle');
+    this.phil.body.setSize(48, 44).setOffset(3, 10);
+    this.phil.body.setMaxVelocity(280, 950); this.duckJumps = 0;
+    this.phil.play('phil-idle');
+    this.physics.add.collider(this.phil, this.solids);   // a real grounded duck — walks/lands on the terrain like the hero
+    this.phil.setInteractive({ useHandCursor:true });
+    this.phil.on('pointerdown', () => this.openChat('phil'));
+
+    // --- projectiles: Emma's particles + Roq's rocks ---
+    this.bolts = this.physics.add.group();
+    this.physics.add.overlap(this.player, this.bolts, (p, bo) => { const bx = bo.x; bo.destroy(); this.damagePlayer(bx); });
+    this.physics.add.collider(this.bolts, this.solids, (bo) => bo.destroy());
+
+    this.coins = 0;   // gold is earned only by killing — drops from slain bosses, no coins lying around
+
+    // --- HUD ---
+    this.coinText = this.add.text(16, 12, 'GOLD: 0',
+      { fontFamily:'monospace', fontSize:'20px', color:'#fcd800', fontStyle:'bold' }).setScrollFactor(0).setStroke('#202020', 5).setDepth(50);
+    this.add.text(W/2, 12, this.heroName,
+      { fontFamily:'monospace', fontSize:'14px', color:'#ffffff' }).setOrigin(0.5,0).setScrollFactor(0).setStroke('#202020', 4).setDepth(50);
+    this.hpText = this.add.text(W-16, 12, '',
+      { fontFamily:'monospace', fontSize:'18px', color:'#ff5a5a', fontStyle:'bold' }).setOrigin(1,0).setScrollFactor(0).setStroke('#202020', 5).setDepth(50);
+    this.updateHpHud();
   }
 
-  update(){
+  doAttack(){
+    if(this.attacking) return;
+    this.attacking = true; this.attackElapsed = 0; this.swingHits = new Set();
+  }
+  hitEnemy(e){
+    if(e.getData('dying') || this.swingHits.has(e)) return;
+    this.swingHits.add(e);
+    if(e.getData('boss') && !e.getData('aggro')){                 // bosses stay passive until you swing
+      e.setData('aggro', true); e.setData('aggroAt', this.time.now);
+      e.setData('nextFire', this.time.now + 1200); e.setData('nextDive', this.time.now + 3000);
+    }
+    if(e.getData('kind') === 'skull' && this.tookShield) e.setData('escalated', true);   // betray the demilich who armed you
+    const hp = e.getData('hp') - 1; e.setData('hp', hp);
+    if(hp > 0){ e.setTintFill(0xffffff); this.time.delayedCall(100, () => { if(e.active) e.clearTint(); }); return; }
+    e.setData('dying', true); e.body.enable = false;
+    const gold = e.getData('gold'), ex = e.x, ey = e.y; e.setTintFill(0xffffff);
+    this.tweens.add({ targets:e, alpha:0, scaleX:1.25, scaleY:1.25, duration:170, onComplete:() => { e.destroy(); this.dropGold(ex, ey, gold); } });
+  }
+  dropGold(x, y, n){
+    for(let i = 0; i < n; i++){
+      const c = this.physics.add.image(x + Phaser.Math.Between(-28, 28), y - 10, 'coin');
+      this.physics.add.collider(c, this.solids);
+      c.setVelocity(Phaser.Math.Between(-70, 70), Phaser.Math.Between(-260, -150)).setBounce(0.35);
+      this.physics.add.overlap(this.player, c, () => { if(c.active){ c.destroy(); this.coins++; this.coinText.setText('GOLD: ' + this.coins); } });
+    }
+  }
+  playerHit(e){
+    if(e.getData('dying')) return;
+    if(e.getData('boss') && !e.getData('aggro')) return;          // a passive boss does no contact damage
+    this.damagePlayer(e.x);
+  }
+  damagePlayer(fromX){
+    if(this.time.now < this.invuln) return;
+    this.invuln = this.time.now + 1200;
+    const dir = this.player.x <= fromX ? -1 : 1;
+    this.player.body.setVelocity(dir * 240, -250);
+    if(this.hasShield){                                           // shield eats the hit, then shatters
+      this.hasShield = false;
+      if(this.carriedShield){ const s = this.carriedShield; this.carriedShield = null; this.tweens.add({ targets:s, scaleX:1.5, scaleY:1.5, angle:120, alpha:0, duration:280, onComplete:()=> s.destroy() }); }
+      this.player.setTint(0x8fd0ff); this.time.delayedCall(1200, () => this.player.clearTint());
+      this.updateHpHud(); return;
+    }
+    this.hp--;
+    this.player.setTint(0xff6a6a); this.time.delayedCall(1200, () => this.player.clearTint());
+    this.updateHpHud();
+    if(this.hp <= 0) this.die();
+  }
+  fireBolt(emma){
+    this.boltToggle = !this.boltToggle;
+    const bo = this.bolts.create(emma.x, emma.y + 20, this.boltToggle ? 'p_orange' : 'p_red');
+    bo.body.setAllowGravity(false);
+    const sx = (this.player.x < emma.x) ? -1 : 1;
+    bo.body.setVelocity(sx * 190, 190);
+    this.time.delayedCall(3500, () => { if(bo.active) bo.destroy(); });
+  }
+  grantEmmaShield(){                                              // called by the chat once Emma is won over
+    if(this.tookShield || this.shieldDropping) return;
+    this.shieldDropping = true;
+    const emma = this.enemies.getChildren().find(e => e.active && e.getData('kind') === 'skull');
+    const x = emma ? emma.x : this.player.x, y = emma ? emma.y : 220;
+    const drop = this.physics.add.image(x, y, 'shield').setDepth(4);
+    drop.setBounce(0.5).setVelocity(Phaser.Math.Between(-30, 30), -140);
+    this.physics.add.collider(drop, this.solids);
+    this.tweens.add({ targets:drop, angle:360, duration:1100, repeat:-1 });
+    const t = this.add.text(x, y - 70, "Emma's shield — take it!", { fontFamily:'monospace', fontSize:'14px', color:'#8fd0ff', fontStyle:'bold' }).setOrigin(0.5).setStroke('#202020', 4).setDepth(30);
+    this.tweens.add({ targets:t, y:t.y - 26, alpha:0, duration:2400, onComplete:()=> t.destroy() });
+    this.physics.add.overlap(this.player, drop, () => { if(drop.active){ drop.destroy(); this.giveShield(); } });
+  }
+  giveShield(){
+    this.tookShield = true; this.hasShield = true; this.shieldDropping = false;
+    this.updateHpHud();
+    if(this.carriedShield) this.carriedShield.destroy();
+    this.carriedShield = this.add.image(this.player.x, this.player.y, 'shield').setScale(0.66).setDepth(1);
+  }
+  die(){
+    this.player.disableBody(true, false);
+    this.cameras.main.fade(550, 0, 0, 0);
+    this.time.delayedCall(580, () => this.scene.start('title'));
+  }
+  updateHpHud(){
+    if(this.hpText) this.hpText.setText('HP ' + '♥'.repeat(Math.max(0, this.hp)) + (this.hasShield ? ' (S)' : ''));
+  }
+  updatePhil(){
+    const p = this.phil, b = p.body;
+    if(Phaser.Math.Distance.Between(p.x, p.y, this.player.x, this.player.y) > 1100){     // last-ditch rejoin if stranded miles off
+      p.setPosition(this.player.x - this.facing * 50, this.player.y - 60); b.setVelocity(0, 0); this.duckJumps = 0; p.play('phil-idle', true); return;
+    }
+    const onGround = b.blocked.down || b.touching.down;
+    if(onGround) this.duckJumps = 0;                                     // reset the air-jump budget on touchdown
+    const gap = this.player.x - p.x, dist = Math.abs(gap), dx = gap;
+    let chasing = p.getData('chasing');
+    if(dist > 140) chasing = true; else if(dist < 70) chasing = false;   // hysteresis — hold when close so he doesn't fidget around behind you
+    p.setData('chasing', chasing);
+    p.setFlipX((chasing ? (Math.sign(gap) || 1) : Math.sign(this.player.x - p.x)) > 0);
+    const leap = (vy) => { b.setVelocityY(-vy); b.setVelocityX(Phaser.Math.Clamp(dx * 1.6, -255, 255)); this.duckJumps++; };  // hop/flap toward the hero
+    if(!chasing){
+      if(onGround) b.setVelocityX(0);
+    } else if(onGround){
+      const dir = Math.sign(gap) || 1;
+      b.setVelocityX(dir * (dist > 320 ? 270 : 200));                    // catch up when far behind, match the hero's pace when near
+      const blocked = (b.blocked.left && dir < 0) || (b.blocked.right && dir > 0);
+      const aheadX = p.x + dir * 44, footY = p.y + 28;
+      const groundAhead = this.solids.some(r => { const bb = r.body; return bb && aheadX >= bb.left && aheadX <= bb.right && footY >= bb.top - 24 && footY <= bb.top + 36; });
+      const playerBelow = this.player.y > p.y + 90;
+      if(blocked || this.player.y < p.y - 50 || (!groundAhead && !playerBelow))
+        leap(470 + Phaser.Math.Clamp(Math.abs(dx) * 0.4, 0, 300));       // launch — arc scales with the gap, aimed at the hero
+    } else {
+      b.setVelocityX(Phaser.Math.Clamp(dx * 2.2, -255, 255));            // steer the arc toward the hero in mid-air
+      if(this.duckJumps < 3 && b.velocity.y > 40 && this.player.y < p.y + 40) leap(430);  // triple-jump to clear a gap / climb to you
+    }
+    // HARD RULE — the duck NEVER drops off the bottom of the screen, even when YOU do. Catch him just inside the
+    // view, bounce him back up toward you, refresh his hops. He stays up there looking smug while you plummet.
+    const floorY = this.cameras.main.scrollY + this.cameras.main.height - 46;
+    if(p.y > floorY){ p.setY(floorY); b.setVelocityY(this.player.y < p.y - 20 ? -470 : 0); this.duckJumps = 0; }
+    p.play('phil-idle', true);
+  }
+  openChat(npc){
+    const src = npc === 'phil' ? this.phil : this.enemies.getChildren().find(e => e.getData('kind') === (npc === 'roq' ? 'pig' : 'skull'));
+    if(!src || !src.active || !window.PortChat) return;
+    window.PortChat.open(npc, this);
+  }
+  showGreet(e, text){
+    const t = this.add.text(e.x, e.y - 72, text, { fontFamily:'monospace', fontSize:'13px', color:'#202020', backgroundColor:'#ffffff', padding:{ x:7, y:5 }, wordWrap:{ width:250 }, align:'center' }).setOrigin(0.5, 1).setDepth(30);
+    this.tweens.add({ targets:t, y:t.y - 16, alpha:0, delay:2600, duration:1300, onComplete:()=> t.destroy() });
+  }
+
+  update(time, delta){
     this.sea.tilePositionX += 0.15;            // gentle current on the delta water
     const b = this.player.body, SPEED = 200, JUMP = 480, CLIMB = 170;
     const L = this.cursors.left.isDown, R = this.cursors.right.isDown;
@@ -756,6 +939,10 @@ class ExploreScene extends Phaser.Scene {
     b.setAllowGravity(true);
 
     const onGround = b.blocked.down || b.touching.down;
+    if(!this.followStarted && onGround){          // dropped in from the top and landed → camera begins tracking
+      this.cameras.main.startFollow(this.player, true, 0.12, 0.12, 0, 120);   // pass the offset — startFollow() without it resets offset to 0 and snap-recentres (that was the landing lurch)
+      this.followStarted = true; this.camOffY = 120;
+    }
     // ninja wall-climb: airborne, pressing into a solid wall, sinking → cling + slow the fall, then kick off
     const wallL = (b.blocked.left  || b.touching.left)  && L;
     const wallR = (b.blocked.right || b.touching.right) && R;
@@ -771,23 +958,108 @@ class ExploreScene extends Phaser.Scene {
 
     if(jump){
       if(sliding){ b.setVelocityX(wallDir * 280); b.setVelocityY(-JUMP); this.jumpsUsed = 1; this.facing = wallDir; }   // kick off the wall
-      else if(this.jumpsUsed < 2){ b.setVelocityY(-JUMP); this.jumpsUsed++; }
+      else if(this.jumpsUsed < 2){ b.setVelocityY(-JUMP); this.jumpsUsed++; if(this.jumpsUsed === 2) this.player.play(this.heroChar + '-djump'); }
+    }
+    if(Phaser.Input.Keyboard.JustDown(this.keyA)) this.doAttack();
+    if(Phaser.Input.Keyboard.JustDown(this.keyS)){                 // talk to the nearest NPC you're facing
+      let best = null, bd = 240;
+      const check = (k, n) => {
+        if(!n || !n.active) return;
+        const d = Phaser.Math.Distance.Between(this.player.x, this.player.y, n.x, n.y);
+        const facing = Math.sign(n.x - this.player.x) === this.facing || d < 70;
+        if(d < bd && facing){ bd = d; best = k; }
+      };
+      check('phil', this.phil);
+      this.enemies.getChildren().forEach(e => { if(e.getData('kind') === 'pig') check('roq', e); if(e.getData('kind') === 'skull') check('emma', e); });
+      if(best) this.openChat(best);
     }
 
-    if(sliding){ this.player.play(this.heroChar + '-wall', true); this.player.setFlipX(wallR); }   // cling, facing away from the wall
+    const hc = this.heroChar, cur = this.player.anims.currentAnim && this.player.anims.currentAnim.key;
+    if(sliding){ this.player.play(hc + '-wall', true); this.player.setFlipX(wallR); }   // cling, facing away from the wall
     else {
       this.player.setFlipX(this.facing < 0);
-      if(!onGround) this.player.play(b.velocity.y < 0 ? this.heroChar + '-jump' : this.heroChar + '-fall', true);
-      else if(L || R) this.player.play(this.heroChar + '-run', true);
-      else this.player.play(this.heroChar + '-idle', true);
+      if(cur === hc + '-djump' && this.player.anims.isPlaying){ /* let the double-jump anim finish */ }
+      else if(!onGround) this.player.play(b.velocity.y < 0 ? hc + '-jump' : hc + '-fall', true);
+      else if(L || R) this.player.play(hc + '-run', true);
+      else this.player.play(hc + '-idle', true);
     }
     if(onGround && this.player.y < 600){ this.lastSafe.x = this.player.x; this.lastSafe.y = this.player.y - 48; }   // respawn a tile higher → drop in cleanly
     if(this.player.y > this.killY){ this.player.setPosition(this.lastSafe.x, this.lastSafe.y); b.setVelocity(0, 0); }
 
-    // in the lair, ease the camera down so the tall chamber above the floor (Emma's fly space) is in view
-    const offTarget = this.player.x > 8750 ? 110 : 0;   // drop less so the hero's feet / the ground stay in view
-    this.camOffY += (offTarget - this.camOffY) * 0.05;
-    this.cameras.main.setFollowOffset(0, this.camOffY);
+    // --- NPCs + combat ---
+    this.updatePhil();
+    if(this.carriedShield){                   // shield rides on the hero's arm until spent
+      this.carriedShield.x = this.player.x + this.facing * 15;
+      this.carriedShield.y = this.player.y + 8;
+      this.carriedShield.setFlipX(this.facing < 0);
+    }
+    this.enemies.getChildren().forEach(e => {
+      if(!e.active || e.getData('dying')) return;
+      const kind = e.getData('kind');
+      if(!e.getData('greeted') && Phaser.Math.Distance.Between(this.player.x, this.player.y, e.x, e.y) < 340){
+        e.setData('greeted', true);
+        this.showGreet(e, kind === 'pig' ? "Ho there, hero! Got work for you — press S to talk."
+                                         : "Lower your blade, little one… let's talk. Press S.");
+      }
+      if(kind === 'pig'){                       // Roq — passive until provoked, then lobs rocks in a fixed arc
+        if(e.getData('aggro') && time > (e.getData('nextFire') || 0)){
+          const bo = this.bolts.create(e.x, e.y - 30, 'p_rock');
+          const sx = (this.player.x < e.x) ? -1 : 1;
+          bo.body.setVelocity(sx * 200, -300);
+          this.time.delayedCall(4000, () => { if(bo.active) bo.destroy(); });
+          e.setData('nextFire', time + 950);
+        }
+      } else if(kind === 'skull'){              // Emma — hovers; on provoke she recoils, then loops + dives + bolts (never faster than the hero)
+        const esc = e.getData('escalated'), SP = esc ? 200 : 150, hy = e.getData('homeY');
+        if(!e.getData('aggro')){
+          e.body.setVelocity(0, ((hy + Math.sin(time / 600) * 45) - e.y) * 2);
+        } else if(time < (e.getData('aggroAt') || 0) + 1100){       // first-hit recoil — pull away + rise
+          const away = (e.x < this.player.x) ? -1 : 1;
+          e.body.setVelocity(away * SP, -SP * 0.7);
+        } else if(time < (e.getData('diveUntil') || 0)){           // mid-dive: swoop at the player
+          const a = Math.atan2(this.player.y - e.y, this.player.x - e.x);
+          e.body.setVelocity(Math.cos(a) * SP, Math.sin(a) * SP);
+        } else {                                                   // flight: drift + bob, fire, schedule next dive
+          let dir = e.getData('dir');
+          if(e.x > e.getData('homeX') + 260) dir = -1; else if(e.x < e.getData('homeX') - 260) dir = 1;
+          e.setData('dir', dir);
+          e.body.setVelocityX(dir * (esc ? 110 : 60));
+          e.body.setVelocityY(((hy + Math.sin(time / (esc ? 240 : 600)) * (esc ? 80 : 45)) - e.y) * 2.5);
+          if(time > (e.getData('nextFire') || 0)){ this.fireBolt(e); e.setData('nextFire', time + (esc ? 650 : 950)); }
+          if(time > (e.getData('nextDive') || 0)){ e.setData('diveUntil', time + 480); e.setData('nextDive', time + (esc ? 2300 : 3800)); }
+        }
+      }
+    });
+    // sword swing — recomputed from the hero's CURRENT position each frame, so it stays attached
+    if(this.attacking){
+      this.attackElapsed += delta;
+      const total = this.SWING.length * this.FRAME_MS;
+      const f = this.SWING[Math.min(this.SWING.length - 1, Math.floor(this.attackElapsed / this.FRAME_MS))];
+      this.sword.setVisible(true);
+      this.sword.x = this.player.x + this.facing * f.dx;
+      this.sword.y = this.player.y + f.dy;
+      this.sword.setAngle(this.facing * f.ang);
+      const hb = new Phaser.Geom.Rectangle(this.player.x + this.facing * 46 - 39, this.player.y - 60, 78, 96);
+      this.enemies.getChildren().forEach(e => { if(e.active && !e.getData('dying') && Phaser.Geom.Rectangle.Overlaps(hb, e.getBounds())) this.hitEnemy(e); });
+      this.bolts.getChildren().forEach(bo => {
+        if(bo.active && Phaser.Geom.Rectangle.Overlaps(hb, bo.getBounds())){
+          const px = bo.x, py = bo.y, tex = (bo.texture && bo.texture.key) || 'p_bullet';
+          bo.destroy();
+          const poof = this.add.image(px, py, tex).setDepth(6);
+          this.tweens.add({ targets:poof, scaleX:1.9, scaleY:1.9, alpha:0, duration:170, onComplete:() => poof.destroy() });
+        }
+      });
+      if(this.attackElapsed >= total){ this.attacking = false; this.sword.setVisible(false); }
+    }
+
+    // camera Y: sit the hero low for a spacious sky; ease the view DOWN (hero higher) only when plummeting,
+    // so dropping into the pit isn't blind. Skipped during the opening drop (camera is held on the meadow) so
+    // the offset stays put and follow switches on cleanly — no lurch when he lands.
+    if(this.followStarted){
+      const targetOff = (!onGround && b.velocity.y > 280) ? -70 : 120;
+      this.camOffY += (targetOff - this.camOffY) * 0.06;
+      this.cameras.main.setFollowOffset(0, this.camOffY);
+    }
   }
 }
 

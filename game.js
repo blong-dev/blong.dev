@@ -650,8 +650,8 @@ class ExploreScene extends Phaser.Scene {
     [[2500,2680,GT],[2780,2920,GT-50],[3020,3180,GT],[3270,3410,GT-80],[3500,3680,GT],
      [3800,3960,GT-40],[4080,4260,GT],[4360,4500,GT-70],[4620,4810,GT]]   // logs hop up + down, varied spacing
       .forEach(([a, b, y]) => log(a, b, y));
-    floor(4800, 5950, GT, 'pa_woods_top', 'pa_woods_fill');           // WOODS — orange/brown (pit gap 5950–6300)
-    floor(6300, 7200, GT, 'pa_woods_top', 'pa_woods_fill');
+    floor(4800, 6080, GT, 'pa_woods_top', 'pa_woods_fill');           // WOODS — orange/brown (pit gap 6080–6280, narrow enough to wall-jump out of)
+    floor(6280, 7200, GT, 'pa_woods_top', 'pa_woods_fill');
     log(6960, 7160, GT - 250);                                        // woods→mountain transition perch — too high to reach
                                                                        //   from the ground; only by jumping off the last floating log (@6620-6820)
     // MOUNTAIN — a ninja wall-climb. No steps: two facing rock walls form a chimney you scale by
@@ -668,19 +668,19 @@ class ExploreScene extends Phaser.Scene {
     plat(8560, 8660, GT - 777, 'pa_mtn');                          //   ↗
     plat(8730, 8800, GT - 910, 'pa_mtn');                          //   ↗ lair lip
     floor(8800, 9600, GT - 910, 'pa_gold', 'pa_gold', MF);         // LAIR — gold plate, at the summit
-    // SECRET BASE — beneath the woods pit (5950–6300). Hidden until you've CROSSED the pit twice THIS run (no save);
+    // SECRET BASE — beneath the woods pit (6080–6280). Hidden until you've CROSSED the pit twice THIS run (no save);
     // then it's there to drop into: a floor, a climbable chimney to wall-jump back out, and a hidden 1-UP. Returning
     // to Roq to collect the bounty takes you back over the pit, so the second crossing tends to happen on its own.
     this.pitCrosses = 0; this.secretOpen = false; this.pitSide = null;
     this.openSecretBase = () => {
       if(this.secretOpen) return;
       this.secretOpen = true;
-      floor(5900, 6360, 820, 'pa_mtn', 'pa_mtn');                  // the room floor
-      wall(6150, GT, 410); wall(6300, GT, 410);                    // a climbable chimney — wall-jump up, top out onto the right woods floor
-      const oneUp = this.add.text(6010, 778, '♥', { fontFamily:'monospace', fontSize:'42px', color:'#5aff5a' }).setOrigin(0.5).setStroke('#143d14', 7).setDepth(6);
+      floor(6040, 6320, 820, 'pa_mtn', 'pa_mtn');                  // the room floor
+      wall(6080, GT, 410); wall(6280, GT, 410);                    // the PIT'S OWN walls are the climb — wall-jump between them, top out onto the woods floors
+      const oneUp = this.add.text(6180, 778, '♥', { fontFamily:'monospace', fontSize:'42px', color:'#5aff5a' }).setOrigin(0.5).setStroke('#143d14', 7).setDepth(6);
       this.physics.add.existing(oneUp); oneUp.body.setAllowGravity(false);
       this.tweens.add({ targets:oneUp, y:oneUp.y - 10, duration:700, yoyo:true, repeat:-1, ease:'Sine.inOut' });
-      this.add.text(6010, 718, '★ 1-UP ★', { fontFamily:'monospace', fontSize:'13px', color:'#fcd800' }).setOrigin(0.5).setStroke('#202020', 4);
+      this.add.text(6180, 718, '★ 1-UP ★', { fontFamily:'monospace', fontSize:'13px', color:'#fcd800' }).setOrigin(0.5).setStroke('#202020', 4);
       this.physics.add.overlap(this.player, oneUp, () => { if(!oneUp.active) return; oneUp.destroy(); this.hp++; this.updateHpHud();
         const t = this.add.text(this.player.x, this.player.y - 60, '1-UP!', { fontFamily:'monospace', fontSize:'18px', color:'#5aff5a', fontStyle:'bold' }).setOrigin(0.5).setStroke('#143d14', 5).setDepth(40);
         this.tweens.add({ targets:t, y:t.y - 42, alpha:0, duration:1500, onComplete:()=> t.destroy() }); });
@@ -1039,7 +1039,7 @@ class ExploreScene extends Phaser.Scene {
     }
     // SECRET BASE — count successful pit CROSSINGS (over the gap, at woods level); reveal the room on the second
     if(!this.secretOpen && this.player.y < 450){
-      const side = this.player.x < 5950 ? 'L' : (this.player.x > 6300 ? 'R' : null);
+      const side = this.player.x < 6080 ? 'L' : (this.player.x > 6280 ? 'R' : null);
       if(side && this.pitSide && side !== this.pitSide && ++this.pitCrosses >= 2) this.openSecretBase();
       if(side) this.pitSide = side;
     }

@@ -353,7 +353,7 @@ class PlayScene extends Phaser.Scene {
     this.tookShield = true; this.hasShield = true; this.shieldDropping = false;
     this.updateHpHud();
     if(this.carriedShield) this.carriedShield.destroy();
-    this.carriedShield = this.add.image(this.player.x, this.player.y, 'shield').setScale(0.66).setDepth(1);
+    this.carriedShield = this.add.image(this.player.x, this.player.y, 'shield').setScale(0.9).setDepth(1);
   }
 
   die(){                            // hp gone = genuine death — fade out, full restart from the home screen
@@ -443,7 +443,7 @@ class PlayScene extends Phaser.Scene {
     this.updatePhil();
     if(this.carriedShield){                   // shield rides on the hero's arm until spent
       this.carriedShield.x = this.player.x + this.facing * 15;
-      this.carriedShield.y = this.player.y + 8;
+      this.carriedShield.y = this.player.y + 22;
       this.carriedShield.setFlipX(this.facing < 0);
     }
 
@@ -855,7 +855,7 @@ class ExploreScene extends Phaser.Scene {
     this.tookShield = true; this.hasShield = true; this.shieldDropping = false;
     this.updateHpHud();
     if(this.carriedShield) this.carriedShield.destroy();
-    this.carriedShield = this.add.image(this.player.x, this.player.y, 'shield').setScale(0.66).setDepth(1);
+    this.carriedShield = this.add.image(this.player.x, this.player.y, 'shield').setScale(0.9).setDepth(1);
   }
   die(){
     this.player.disableBody(true, false);
@@ -984,13 +984,18 @@ class ExploreScene extends Phaser.Scene {
       else this.player.play(hc + '-idle', true);
     }
     if(onGround && this.player.y < 600){ this.lastSafe.x = this.player.x; this.lastSafe.y = this.player.y - 48; }   // respawn a tile higher → drop in cleanly
-    if(this.player.y > this.killY){ this.player.setPosition(this.lastSafe.x, this.lastSafe.y); b.setVelocity(0, 0); }
+    if(this.player.body.enable && this.player.y > this.killY){   // a FALL is a death — costs a life; the shield can't save you from it, but you don't lose the shield either
+      this.hp--; this.updateHpHud();
+      if(this.hp <= 0) this.die();
+      else { this.player.setPosition(this.lastSafe.x, this.lastSafe.y); b.setVelocity(0, 0);
+             this.player.setTint(0xff6a6a); this.time.delayedCall(700, () => this.player.clearTint()); }
+    }
 
     // --- NPCs + combat ---
     this.updatePhil();
     if(this.carriedShield){                   // shield rides on the hero's arm until spent
       this.carriedShield.x = this.player.x + this.facing * 15;
-      this.carriedShield.y = this.player.y + 8;
+      this.carriedShield.y = this.player.y + 22;
       this.carriedShield.setFlipX(this.facing < 0);
     }
     this.enemies.getChildren().forEach(e => {

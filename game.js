@@ -43,7 +43,8 @@ class BootScene extends Phaser.Scene {
       });
     });
     // enemies (each baked 3x; frame dims differ per creature)
-    const ES = { slime:[132,90], ghost:[88,60], rino:[156,102], plant:[132,126], pig:[108,90], skull:[156,162] };
+    const ES = { slime:[132,90], ghost:[88,60], rino:[156,102], plant:[132,126], pig:[108,90], skull:[156,162],
+                 bat:[92,60], bird:[96,96], turtle:[88,52], trunk:[192,96], snail:[76,48] };
     for (const k in ES) this.load.spritesheet(`${k}_idle`, PA + `${k}_idle.png`, { frameWidth:ES[k][0], frameHeight:ES[k][1] });
     ['p_orange','p_red','p_bullet','p_rock'].forEach(k => this.load.image(k, PA + k + '.png'));
     this.load.spritesheet('duck_idle', PA + 'duck_idle.png', { frameWidth:54, frameHeight:54 });
@@ -58,7 +59,7 @@ class BootScene extends Phaser.Scene {
       this.anims.create({ key:`${c}-djump`, frames:this.anims.generateFrameNumbers(`${c}_djump`), frameRate:20, repeat:0 });
       this.anims.create({ key:`${c}-wall`,  frames:this.anims.generateFrameNumbers(`${c}_wall`),  frameRate:16, repeat:-1 });
     });
-    ['slime','ghost','rino','plant','pig','skull'].forEach(k =>
+    ['slime','ghost','rino','plant','pig','skull','bat','bird','turtle','trunk','snail'].forEach(k =>
       this.anims.create({ key:`${k}-idle`, frames:this.anims.generateFrameNumbers(`${k}_idle`), frameRate:14, repeat:-1 }));
     this.anims.create({ key:'phil-idle', frames:this.anims.generateFrameNumbers('duck_idle'), frameRate:8, repeat:-1 });
     const explore = location.search.indexOf('explore') >= 0;   // /?explore → roam the empty world
@@ -744,7 +745,7 @@ class ExploreScene extends Phaser.Scene {
     this.SWING = [ { dx:10, dy:-10, ang:-10 }, { dx:15, dy:-6, ang:50 }, { dx:19, dy:-2, ang:105 }, { dx:21, dy:6, ang:150 } ];
     this.sword = this.add.image(0, 0, 'sword').setOrigin(0.5, 0.85).setDepth(5).setVisible(false);
 
-    // --- the two main NPCs (no bestiary yet): Roq in the town, Emma flying in the lair chamber ---
+    // --- the bosses: Roq in the town, Emma flying in the lair chamber ---
     this.enemies = this.physics.add.group();
     const roq = this.enemies.create(2090, GT - 170, 'pig_idle');                 // Roq — business hog
     roq.body.setSize(99, 81).setOffset(6, 9); roq.play('pig-idle');
@@ -755,7 +756,40 @@ class ExploreScene extends Phaser.Scene {
     emma.setData({ kind:'skull', gold:5, hp:5, patrol:0, dir:1, homeX:9200, homeY:-690, floater:true, dying:false, boss:true, aggro:false });
     this.add.text(9200, -880, 'EMMA', { fontFamily:'monospace', fontSize:'16px', color:'#e0c060' }).setOrigin(0.5).setStroke('#202020', 4);
     this.add.text(2090, GT - 250, 'ROQ', { fontFamily:'monospace', fontSize:'13px', color:'#ffffff' }).setOrigin(0.5).setStroke('#202020', 4);
-    this.physics.add.overlap(this.player, this.enemies, (p, e) => this.playerHit(e));   // contact damage (only once a boss is provoked)
+    this.physics.add.overlap(this.player, this.enemies, (p, e) => this.playerHit(e));   // contact damage (passive bosses do none)
+
+    // --- the bestiary, placed across the biomes (easy → charger → shooters → climb hazards), 2-ish per zone ---
+    const ebody = (e, w, h, ox, oy) => { e.body.setSize(w, h).setOffset(ox, oy); return e; };
+    const groundFoe = (kind, x, extra) => {                       // gravity on — lands on the terrain
+      const e = this.enemies.create(x, GT - 170, kind + '_idle'); e.play(kind + '-idle');
+      this.physics.add.collider(e, this.solids);
+      e.setData(Object.assign({ kind, gold:1, hp:1, patrol:0, dir:1, homeX:x, floater:false, dying:false, boss:false, aggro:false }, extra || {}));
+      return e;
+    };
+    const flyFoe = (kind, x, y, extra) => {                       // no gravity — hovers / patrols / clings
+      const e = this.enemies.create(x, y, kind + '_idle'); e.body.setAllowGravity(false); e.play(kind + '-idle');
+      e.setData(Object.assign({ kind, gold:1, hp:1, patrol:0, dir:1, homeX:x, homeY:y, floater:true, dying:false, boss:false, aggro:false }, extra || {}));
+      return e;
+    };
+    ebody(groundFoe('rino',   1300), 144, 84, 6, 18);             // MEADOW — Thornboar charges
+    ebody(groundFoe('turtle', 760),  80, 44, 4, 6);               //   spiky Turtles (small), slow patrol — three across the meadow
+    ebody(groundFoe('turtle', 1500), 80, 44, 4, 6);
+    ebody(groundFoe('turtle', 2300), 80, 44, 4, 6);
+    ebody(groundFoe('plant', 3120), 84, 105, 33, 21);            // DELTA — Faun cannons on the logs
+    ebody(groundFoe('plant', 4180), 84, 105, 33, 21);
+    ebody(flyFoe('bird', 3520, GT - 150), 60, 46, 18, 26);        //   BlueBirds patrol overhead
+    ebody(flyFoe('bird', 4300, GT - 210), 60, 46, 18, 26);
+    ebody(groundFoe('trunk', 5180), 138, 80, 27, 14);            // WOODS — Trunk cannons
+    ebody(groundFoe('trunk', 6720), 138, 80, 27, 14);
+    ebody(flyFoe('ghost', 5600, GT - 150), 60, 40, 14, 12);       //   Wisps — Boo: freeze them by facing them
+    ebody(flyFoe('ghost', 5000, -70),  60, 40, 14, 12);           //   two more drift down from off the top of the screen
+    ebody(flyFoe('ghost', 6900, -40),  60, 40, 14, 12);
+    ebody(flyFoe('ghost', 7480, GT - 320), 60, 40, 14, 12);       //   one haunts the mountain climb
+    ebody(flyFoe('snail', 7682, GT - 270, { vdir: 1 }),  44, 30, 16, 9);   // MOUNTAIN — Snails crawl the chimney walls (head faces travel; angle set in update)
+    ebody(flyFoe('snail', 7800, GT - 270, { vdir: -1 }), 44, 30, 16, 9);
+    ebody(flyFoe('bat', 7440, GT - 300), 72, 34, 10, 13);         //   Bats dart along the climb (small + fast) — three up the mountain
+    ebody(flyFoe('bat', 8080, GT - 620), 72, 34, 10, 13);
+    ebody(flyFoe('bat', 8600, GT - 880), 72, 34, 10, 13);
 
     // --- Phil — assistant duck: trails you (warps up if he falls behind in the rough terrain); click/face+S to talk ---
     this.phil = this.physics.add.sprite(80, GT - 120, 'duck_idle');
@@ -769,7 +803,8 @@ class ExploreScene extends Phaser.Scene {
     // --- projectiles: Emma's particles + Roq's rocks ---
     this.bolts = this.physics.add.group();
     this.physics.add.overlap(this.player, this.bolts, (p, bo) => { const bx = bo.x; bo.destroy(); this.damagePlayer(bx); });
-    this.physics.add.collider(this.bolts, this.solids, (bo) => bo.destroy());
+    // projectiles do NOT collide with terrain — they only deal damage on contact, then sail through and off-screen,
+    // self-destructing on their timer. (Also kills the class of bug where a projectile could delete a terrain collider.)
 
     this.coins = 0;   // gold is earned only by killing — drops from slain bosses, no coins lying around
 
@@ -799,7 +834,9 @@ class ExploreScene extends Phaser.Scene {
     if(hp > 0){ e.setTintFill(0xffffff); this.time.delayedCall(100, () => { if(e.active) e.clearTint(); }); return; }
     e.setData('dying', true); e.body.enable = false;
     const gold = e.getData('gold'), ex = e.x, ey = e.y; e.setTintFill(0xffffff);
-    this.tweens.add({ targets:e, alpha:0, scaleX:1.25, scaleY:1.25, duration:170, onComplete:() => { e.destroy(); this.dropGold(ex, ey, gold); } });
+    // disableBody (hide + deactivate) instead of destroy() — destroying a sprite that's in a collider vs the shared
+    // this.solids array can leave a dangling collider; disabling keeps it clean and the foe is gone all the same.
+    this.tweens.add({ targets:e, alpha:0, scaleX:1.25, scaleY:1.25, duration:170, onComplete:() => { if(e.body) e.disableBody(true, true); this.dropGold(ex, ey, gold); } });
   }
   dropGold(x, y, n){
     for(let i = 0; i < n; i++){
@@ -1001,7 +1038,7 @@ class ExploreScene extends Phaser.Scene {
     this.enemies.getChildren().forEach(e => {
       if(!e.active || e.getData('dying')) return;
       const kind = e.getData('kind');
-      if(!e.getData('greeted') && Phaser.Math.Distance.Between(this.player.x, this.player.y, e.x, e.y) < 340){
+      if(e.getData('boss') && !e.getData('greeted') && Phaser.Math.Distance.Between(this.player.x, this.player.y, e.x, e.y) < 340){
         e.setData('greeted', true);
         this.showGreet(e, kind === 'pig' ? "Ho there, hero! Got work for you — press S to talk."
                                          : "Lower your blade, little one… let's talk. Press S.");
@@ -1033,6 +1070,63 @@ class ExploreScene extends Phaser.Scene {
           if(time > (e.getData('nextFire') || 0)){ this.fireBolt(e); e.setData('nextFire', time + (esc ? 650 : 950)); }
           if(time > (e.getData('nextDive') || 0)){ e.setData('diveUntil', time + 480); e.setData('nextDive', time + (esc ? 2300 : 3800)); }
         }
+      } else if(kind === 'plant'){              // Faun — lobs an arced bullet (read the arc, weave)
+        if(time > (e.getData('nextFire') || 0) && Math.abs(this.player.x - e.x) < 620){
+          const bo = this.bolts.create(e.x, e.y - 36, 'p_bullet');
+          bo.body.setVelocity(Phaser.Math.Clamp(this.player.x - e.x, -260, 260), -340);
+          this.time.delayedCall(4000, () => { if(bo.active) bo.destroy(); });
+          e.setData('nextFire', time + 1700);
+        }
+      } else if(kind === 'trunk'){              // Trunk — cannon: a straight horizontal shot when you're roughly level
+        if(time > (e.getData('nextFire') || 0) && Math.abs(this.player.x - e.x) < 660 && Math.abs(this.player.y - e.y) < 130){
+          const sx = (this.player.x < e.x) ? -1 : 1; e.setFlipX(sx > 0);
+          const bo = this.bolts.create(e.x + sx * 34, e.y - 8, 'p_bullet'); bo.body.setAllowGravity(false);
+          bo.body.setVelocity(sx * 250, 0);
+          this.time.delayedCall(4000, () => { if(bo.active) bo.destroy(); });
+          e.setData('nextFire', time + 1800);
+        }
+      } else if(kind === 'ghost'){              // Wisp — Boo: dormant until you're near, then freezes when faced / sneaks when not
+        if(Phaser.Math.Distance.Between(this.player.x, this.player.y, e.x, e.y) > 540){ e.body.setVelocity(0, 0); }
+        else {
+          e.setFlipX(this.player.x > e.x);
+          if(Math.sign(e.x - this.player.x) === this.facing){ e.body.setVelocity(0, 0); }
+          else {
+            const a = Math.atan2((this.player.y - 30) - e.y, this.player.x - e.x), wob = Math.sin(time / 150) * 130;
+            e.body.setVelocity(Math.cos(a) * 64 + Math.cos(a + Math.PI/2) * wob, Math.sin(a) * 64 + Math.sin(a + Math.PI/2) * wob);
+          }
+        }
+      } else if(kind === 'rino'){               // Thornboar — creeps, then explodes into a charge after 1s closing in
+        const dx = this.player.x - e.x;
+        if(Math.abs(dx) < 460){
+          const dir = Math.sign(dx) || 1;
+          if(e.getData('chargeDir') !== dir){ e.setData('chargeDir', dir); e.setData('chargeStart', time); }
+          e.body.setVelocityX(dir * (time - e.getData('chargeStart') > 1000 ? 300 : 110)); e.setFlipX(dir > 0);
+        } else { e.setData('chargeDir', 0); e.body.setVelocityX(0); }
+      } else if(kind === 'turtle'){             // spiky Turtle — slow shell patrol (always dangerous to touch)
+        let dir = e.getData('dir');
+        if(e.x > e.getData('homeX') + 80) dir = -1; else if(e.x < e.getData('homeX') - 80) dir = 1;
+        e.setData('dir', dir); e.body.setVelocityX(dir * 40); e.setFlipX(dir > 0);
+      } else if(kind === 'snail'){              // Snail — clings to a chimney wall, crawls up/down, head facing its travel
+        let vdir = e.getData('vdir');
+        if(e.y > e.getData('homeY') + 150) vdir = -1; else if(e.y < e.getData('homeY') - 150) vdir = 1;
+        e.setData('vdir', vdir); e.body.setVelocity(0, vdir * 48);
+        e.setAngle(vdir === 1 ? 90 : -90);
+      } else if(kind === 'bat'){                // Bat — roosts, then darts FAST at you when you climb near, peels back
+        if(Phaser.Math.Distance.Between(this.player.x, this.player.y, e.x, e.y) < 340 && time > (e.getData('nextSwoop') || 0)){
+          e.setData('swoopUntil', time + 600); e.setData('nextSwoop', time + 1700);
+        }
+        if(time < (e.getData('swoopUntil') || 0)){
+          const a = Math.atan2(this.player.y - e.y, this.player.x - e.x);
+          e.body.setVelocity(Math.cos(a) * 240, Math.sin(a) * 240);
+        } else { e.body.setVelocity((e.getData('homeX') - e.x) * 3, (e.getData('homeY') - e.y) * 3.5); }
+        e.setFlipX(this.player.x > e.x);
+      } else if(kind === 'bird'){               // BlueBird — cruises back and forth over the delta (a timing obstacle)
+        let dir = e.getData('dir');
+        if(e.x > e.getData('homeX') + 320) dir = -1; else if(e.x < e.getData('homeX') - 320) dir = 1;
+        e.setData('dir', dir);
+        e.body.setVelocityX(dir * 120);
+        e.body.setVelocityY((e.getData('homeY') + Math.sin(time / 350) * 16 - e.y) * 3);
+        e.setFlipX(dir > 0);
       }
     });
     // sword swing — recomputed from the hero's CURRENT position each frame, so it stays attached

@@ -17,7 +17,7 @@
 
   const sessions = { phil: [], roq: [], emma: [] };   // per-NPC history, this visit
   const bossLog = [];                                 // Emma/Roq transcripts, fed to Phil
-  let scene = null, npc = null, pendingShield = false;
+  let scene = null, npc = null, pendingShield = false, pendingBounty = false, llmDown = false;
   let root, titleEl, badgeEl, logEl, inputEl, sendBtn;
 
   const el = (tag, css, txt) => { const e = document.createElement(tag); if (css) e.style.cssText = css; if (txt != null) e.textContent = txt; return e; };
@@ -92,9 +92,11 @@
     if (!root) return;
     root.style.display = 'none';
     if (npc === 'roq' || npc === 'emma') bossLog.push({ who: NPCS[npc].name, lines: sessions[npc].slice() });
-    const grant = pendingShield && scene && scene.grantEmmaShield;
+    const grant = scene && scene.grantEmmaShield && (pendingShield || (npc === 'emma' && llmDown));   // shield drops on agreement, or as a fallback when the LLM is down
+    const payout = scene && scene.payBounty && (pendingBounty || (npc === 'roq' && scene.bossDead && scene.bossDead.emma));
     if (scene) { scene.input.keyboard.enabled = true; scene.scene.resume(); }
     if (grant) { pendingShield = false; scene.grantEmmaShield(); }   // Emma agreed in chat → drop the shield
+    if (payout) { pendingBounty = false; scene.payBounty(); }        // Roq paid the bounty → add 25 gold
     npc = null;
   }
 
@@ -109,10 +111,12 @@
     try {
       let reply = await respond(npc, sessions[npc], text);
       if (npc === 'emma' && reply.includes('<<SHIELD>>')) { reply = reply.replace(/<<SHIELD>>/g, '').trim(); pendingShield = true; }
+      if (npc === 'roq'  && reply.includes('<<GOLD>>'))   { reply = reply.replace(/<<GOLD>>/g, '').trim();   pendingBounty = true; }
       pending.textContent = reply;
       sessions[npc].push({ role: 'npc', text: reply });
     } catch (err) {
       pending.textContent = '(…the line sputters. Try again.)';
+      llmDown = true;
     }
     sendBtn.disabled = false;
     logEl.scrollTop = logEl.scrollHeight;
@@ -125,13 +129,15 @@
       body: JSON.stringify({ npc: which, history, message: text, bossLog: which === 'phil' ? bossLog : undefined, dead: (scene && scene.bossDead) || null }),
     });
     if (!r.ok) throw new Error('chat ' + r.status);
-    return (await r.json()).reply;
+    const data = await r.json();
+    if (data.fallback) llmDown = true;        // LLM unavailable → fall back to scripted rewards so progress isn't blocked
+    return data.reply;
   }
 
   function reset(){                       // wipe all NPC memory for a fresh playthrough
     Object.keys(sessions).forEach(k => { sessions[k] = []; });
     bossLog.length = 0;
-    pendingShield = false;
+    pendingShield = false; pendingBounty = false;
   }
 
   window.PortChat = { open, close, reset };

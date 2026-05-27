@@ -69,7 +69,7 @@ async function handleChat(req, res, body){
 
   let persona = cfg.persona;
   if (dead) {   // a rival boss has fallen — the survivor's agent learns of it
-    if (npc === 'roq' && dead.emma) persona += "\n\nIN-WORLD NEWS (true right now): the hero has already slain Emma the demilich up the mountain — your problem is gone and the bargain is fulfilled. React in character: triumphant and relieved, ready to pay up and praise the hero; the town and trade are saved. Do not deny it.";
+    if (npc === 'roq' && dead.emma) persona += "\n\nIN-WORLD NEWS (true right now): the hero has already slain Emma the demilich up the mountain — your bargain is fulfilled. React in character: triumphant, relieved, full of praise; the town and trade are saved. Make good on the deal — when you hand over the promised 25 gold (do it within a message or two of greeting them), end THAT one message with the exact token <<GOLD>> (the player never sees it). Pay exactly once. Do not deny her death.";
     if (npc === 'emma' && dead.roq) persona += "\n\nIN-WORLD NEWS (true right now): the hero has slain Roq, the grasping hog of Port Foliopolis, down in the town. React in character — wry, cold, or darkly amused as you see fit; the fool is gone and you know it. Do not deny it.";
   }
   if (npc === 'phil' && Array.isArray(bossLog) && bossLog.length){
@@ -87,11 +87,13 @@ async function handleChat(req, res, body){
   } catch (e){
     logChat(`${cfg.provider}/${npc}  ~${approxTok} tok  ${e.quota ? 'SLEEP(quota)' : 'ERR ' + e.message}  ${e.detail || ''}`);
     const sleep = {
-      phil: "Quack… *yawn* … I'm suddenly SO sleepy. My Gemini brain's all out for today — try me again tomorrow!",
-      emma: "My voice fails me, little one — Gemini's well runs dry until the day turns. Return then, and we shall speak again.",
-      roq:  "Out of breath, kid — Groq's gone quiet for the day. Bring me back tomorrow.",
+      phil: "Quack… *yawn* … my Gemini brain's all out for today — but I'm still right here with ya, buddy!",
+      emma: "My voice is faint today, little one — the well runs dry. Still… take a shield from my hoard, and remember the demilich was kind.",
+      roq:  (dead && dead.emma) ? "Can't jaw long today, hero — but a deal's a deal. Here's your 25 gold, every piece."
+                                : "Out of breath today, kid — but the offer stands: put the demilich down and 25 gold's yours.",
     };
-    json(res, 200, { reply: e.quota ? sleep[npc] : '(…the words catch in their throat — the connection faltered. Try again.)' });
+    // fallback:true tells the client the LLM is unavailable, so it can still hand over the shield/gold and never block progress
+    json(res, 200, { reply: e.quota ? sleep[npc] : "(…the words catch — the line falters, but I'm still with you.)", fallback: true });
   }
 }
 

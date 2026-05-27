@@ -668,13 +668,23 @@ class ExploreScene extends Phaser.Scene {
     plat(8560, 8660, GT - 777, 'pa_mtn');                          //   ↗
     plat(8730, 8800, GT - 910, 'pa_mtn');                          //   ↗ lair lip
     floor(8800, 9600, GT - 910, 'pa_gold', 'pa_gold', MF);         // LAIR — gold plate, at the summit
-    floor(5820, 6380, 820, 'pa_mtn', 'pa_mtn');                       // HOME BASE — secret chamber (drop in via the woods pit)
-    this.ladder = { cx: 6270, half: 14, top: GT - 40, bottom: 824 };  //   climb out on a LADDER (press ↑/↓) — no longer a trap
-    this.climbing = false;
-    this.add.tileSprite(this.ladder.cx - this.ladder.half, this.ladder.top, this.ladder.half * 2,
-      this.ladder.bottom - this.ladder.top, 'ladder').setOrigin(0).setDepth(-3);
-    this.add.text(6100, 760, '★ 1-UP ★', { fontFamily:'monospace', fontSize:'15px', color:'#fcd800' })
-      .setOrigin(0.5).setStroke('#202020', 4);
+    // SECRET BASE — beneath the woods pit (5950–6300). Hidden until you've CROSSED the pit twice THIS run (no save);
+    // then it's there to drop into: a floor, a climbable chimney to wall-jump back out, and a hidden 1-UP. Returning
+    // to Roq to collect the bounty takes you back over the pit, so the second crossing tends to happen on its own.
+    this.pitCrosses = 0; this.secretOpen = false; this.pitSide = null;
+    this.openSecretBase = () => {
+      if(this.secretOpen) return;
+      this.secretOpen = true;
+      floor(5900, 6360, 820, 'pa_mtn', 'pa_mtn');                  // the room floor
+      wall(6150, GT, 410); wall(6300, GT, 410);                    // a climbable chimney — wall-jump up, top out onto the right woods floor
+      const oneUp = this.add.text(6010, 778, '♥', { fontFamily:'monospace', fontSize:'42px', color:'#5aff5a' }).setOrigin(0.5).setStroke('#143d14', 7).setDepth(6);
+      this.physics.add.existing(oneUp); oneUp.body.setAllowGravity(false);
+      this.tweens.add({ targets:oneUp, y:oneUp.y - 10, duration:700, yoyo:true, repeat:-1, ease:'Sine.inOut' });
+      this.add.text(6010, 718, '★ 1-UP ★', { fontFamily:'monospace', fontSize:'13px', color:'#fcd800' }).setOrigin(0.5).setStroke('#202020', 4);
+      this.physics.add.overlap(this.player, oneUp, () => { if(!oneUp.active) return; oneUp.destroy(); this.hp++; this.updateHpHud();
+        const t = this.add.text(this.player.x, this.player.y - 60, '1-UP!', { fontFamily:'monospace', fontSize:'18px', color:'#5aff5a', fontStyle:'bold' }).setOrigin(0.5).setStroke('#143d14', 5).setDepth(40);
+        this.tweens.add({ targets:t, y:t.y - 42, alpha:0, duration:1500, onComplete:()=> t.destroy() }); });
+    };
     // floating platforms — a little verticality + challenge through the run (wooden logs)
     [[760, 940, GT - 110], [1180, 1340, GT - 175], [1520, 1660, GT - 120],
      [5080, 5260, GT - 130], [5480, 5660, GT - 205], [6620, 6820, GT - 140]]
@@ -737,7 +747,7 @@ class ExploreScene extends Phaser.Scene {
     if(window.PortChat) window.PortChat.reset();   // clean-slate NPC chats each playthrough (death = fresh start)
 
     // --- combat state ---
-    this.hp = 2; this.invuln = 0; this.bossDead = { roq: false, emma: false };   // a slain boss → fed to the OTHER boss's chat agent
+    this.hp = 2; this.invuln = 0; this.bossDead = { roq: false, emma: false }; this.bountyPaid = false;   // a slain boss → fed to the OTHER boss's chat agent
     this.hasShield = false; this.tookShield = false; this.carriedShield = null; this.shieldDropping = false;
     this.boltToggle = false;
     this.swingHits = new Set(); this.attacking = false; this.attackElapsed = 0; this.FRAME_MS = 55;
@@ -762,12 +772,12 @@ class ExploreScene extends Phaser.Scene {
     const groundFoe = (kind, x, extra) => {                       // gravity on — lands on the terrain
       const e = this.enemies.create(x, GT - 170, kind + '_idle'); e.play(kind + '-idle');
       this.physics.add.collider(e, this.solids);
-      e.setData(Object.assign({ kind, gold:1, hp:1, patrol:0, dir:1, homeX:x, floater:false, dying:false, boss:false, aggro:false }, extra || {}));
+      e.setData(Object.assign({ kind, gold:1, hp:1, maxHp:1, patrol:0, dir:1, homeX:x, spawnY: GT - 170, floater:false, dying:false, boss:false, aggro:false }, extra || {}));
       return e;
     };
     const flyFoe = (kind, x, y, extra) => {                       // no gravity — hovers / patrols / clings
       const e = this.enemies.create(x, y, kind + '_idle'); e.body.setAllowGravity(false); e.play(kind + '-idle');
-      e.setData(Object.assign({ kind, gold:1, hp:1, patrol:0, dir:1, homeX:x, homeY:y, floater:true, dying:false, boss:false, aggro:false }, extra || {}));
+      e.setData(Object.assign({ kind, gold:1, hp:1, maxHp:1, patrol:0, dir:1, homeX:x, homeY:y, spawnY:y, floater:true, dying:false, boss:false, aggro:false }, extra || {}));
       return e;
     };
     ebody(groundFoe('rino',   1300), 144, 84, 6, 18);             // MEADOW — Thornboar charges
@@ -837,6 +847,14 @@ class ExploreScene extends Phaser.Scene {
     // disableBody (hide + deactivate) instead of destroy() — destroying a sprite that's in a collider vs the shared
     // this.solids array can leave a dangling collider; disabling keeps it clean and the foe is gone all the same.
     this.tweens.add({ targets:e, alpha:0, scaleX:1.25, scaleY:1.25, duration:170, onComplete:() => { if(e.body) e.disableBody(true, true); this.dropGold(ex, ey, gold); } });
+    if(!e.getData('boss')) this.time.delayedCall(60000, () => this.reviveEnemy(e));   // commons respawn at their post ~a minute after death (bosses stay dead)
+  }
+  reviveEnemy(e){
+    if(!e || !e.body) return;
+    e.enableBody(true, e.getData('homeX'), e.getData('spawnY'), true, true);   // back at its spawn, full health
+    e.setData('hp', e.getData('maxHp') || 1); e.setData('dying', false); e.setData('aggro', false);
+    e.clearTint(); e.setAlpha(1); e.setScale(1);
+    e.play(e.getData('kind') + '-idle', true);
   }
   dropGold(x, y, n){
     for(let i = 0; i < n; i++){
@@ -874,6 +892,20 @@ class ExploreScene extends Phaser.Scene {
     const sx = (this.player.x < emma.x) ? -1 : 1;
     bo.body.setVelocity(sx * 190, 190);
     this.time.delayedCall(3500, () => { if(bo.active) bo.destroy(); });
+  }
+  payBounty(){                                                    // Roq pays the 25-gold deal — it rains from the sky (once)
+    if(this.bountyPaid) return;
+    this.bountyPaid = true;
+    this.coins += 25; this.coinText.setText('GOLD: ' + this.coins);
+    const top = this.cameras.main.scrollY;
+    for(let i = 0; i < 25; i++){                                  // a celebratory shower of coins falling around the hero
+      const c = this.add.image(this.player.x + Phaser.Math.Between(-170, 170), top - Phaser.Math.Between(20, 380), 'coin').setDepth(35);
+      this.tweens.add({ targets:c, y: this.player.y + Phaser.Math.Between(-6, 34), delay: Phaser.Math.Between(0, 650), duration: Phaser.Math.Between(650, 1300), ease:'Quad.in',
+        onComplete: () => this.tweens.add({ targets:c, alpha:0, duration:220, onComplete:()=> c.destroy() }) });
+    }
+    const t = this.add.text(this.player.x, this.player.y - 70, '+25 GOLD',
+      { fontFamily:'monospace', fontSize:'18px', color:'#fcd800', fontStyle:'bold' }).setOrigin(0.5).setStroke('#202020', 5).setDepth(40);
+    this.tweens.add({ targets:t, y:t.y - 46, alpha:0, duration:1600, onComplete:()=> t.destroy() });
   }
   grantEmmaShield(){                                              // called by the chat once Emma is won over
     if(this.tookShield || this.shieldDropping) return;
@@ -948,31 +980,9 @@ class ExploreScene extends Phaser.Scene {
 
   update(time, delta){
     this.sea.tilePositionX += 0.15;            // gentle current on the delta water
-    const b = this.player.body, SPEED = 200, JUMP = 480, CLIMB = 170;
+    const b = this.player.body, SPEED = 200, JUMP = 480;
     const L = this.cursors.left.isDown, R = this.cursors.right.isDown;
-    const U = this.cursors.up.isDown, D = this.cursors.down.isDown;
     const jump = Phaser.Input.Keyboard.JustDown(this.keySpace);
-
-    // LADDER — grab when overlapping + pressing ↑/↓; climb with gravity off; jump or press ←/→ to step off
-    const lad = this.ladder;
-    const onLadder = Math.abs(this.player.x - lad.cx) < lad.half + 30 &&
-                     this.player.y > lad.top - 28 && this.player.y < lad.bottom + 14;
-    if(onLadder && (U || D)) this.climbing = true;
-    if(this.climbing && (L || R)) this.climbing = false;      // step off sideways onto the ledge
-    if(!onLadder) this.climbing = false;
-    if(this.climbing){
-      if(jump){ this.climbing = false; b.setAllowGravity(true); b.setVelocityY(-JUMP); this.jumpsUsed = 1; }
-      else {
-        b.setAllowGravity(false);
-        this.player.x += (lad.cx - this.player.x) * 0.3;       // snap to the rungs
-        let vy = U ? -CLIMB : D ? CLIMB : 0;
-        if(this.player.y <= lad.top && vy < 0) vy = 0;         // clamp at the top — press → to step onto the ledge
-        if(this.player.y >= lad.bottom && vy > 0) vy = 0;
-        b.setVelocity(0, vy); this.jumpsUsed = 0;
-        this.player.play(this.heroChar + '-idle', true); this.player.setFlipX(this.facing < 0);
-        return;
-      }
-    }
     b.setAllowGravity(true);
 
     const onGround = b.blocked.down || b.touching.down;
@@ -1026,6 +1036,12 @@ class ExploreScene extends Phaser.Scene {
       if(this.hp <= 0) this.die();
       else { this.player.setPosition(this.lastSafe.x, this.lastSafe.y); b.setVelocity(0, 0);
              this.player.setTint(0xff6a6a); this.time.delayedCall(700, () => this.player.clearTint()); }
+    }
+    // SECRET BASE — count successful pit CROSSINGS (over the gap, at woods level); reveal the room on the second
+    if(!this.secretOpen && this.player.y < 450){
+      const side = this.player.x < 5950 ? 'L' : (this.player.x > 6300 ? 'R' : null);
+      if(side && this.pitSide && side !== this.pitSide && ++this.pitCrosses >= 2) this.openSecretBase();
+      if(side) this.pitSide = side;
     }
 
     // --- NPCs + combat ---

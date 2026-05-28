@@ -226,13 +226,13 @@
           </div>
           <div class="tile concept" data-link="https://github.com/Madreag/turbo3-cuda">
             <div class="body">
-              <div class="name">turbo3 <span class="badge shipped">open source</span></div>
-              <div class="one">524K tokens of context on a single 32&nbsp;GB GPU.</div>
+              <div class="name">turbo3 <span class="badge shipped">open-source fork</span></div>
+              <div class="one">My CUDA port of the published TurboQuant method — 524K context on one 32&nbsp;GB GPU.</div>
               <div class="card-cue">case study</div>
               <div class="case-body" hidden>
                 <p><b>What it does</b> A CUDA implementation of TurboQuant (ICLR 2026) KV-cache compression for llama.cpp — squeezing the KV cache down to <strong>3.5 bits</strong> so one GPU holds far more context.</p>
                 <p><b>The infrastructure flex</b> Configured and validated on Qwen3.5-27B to fit <strong>524K tokens (3 slots × 174K) at ~55 tok/s on a single RTX 5090</strong> — ~4.6× smaller KV than FP16. It works because the model is hybrid: only 16 of 64 layers carry a KV cache worth compressing.</p>
-                <p><b>The honest part</b> I didn't invent the algorithm — the CUDA integration, the VRAM math, and the validation are the work. It's what gives the agents the long context to digest filings and papers in a single pass.</p>
+                <p><b>What's mine vs. what isn't</b> The TurboQuant algorithm and its 3.5-bit math are <strong>published research (ICLR 2026, arXiv:2504.19874) — not mine</strong>. The CUDA port to llama.cpp, the VRAM tuning, and the validation on Qwen3.5-27B <strong>are</strong> — which is what gives the agents the long context to digest filings and papers in one pass.</p>
               </div>
             </div>
           </div>

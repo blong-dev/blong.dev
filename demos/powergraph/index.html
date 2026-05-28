@@ -99,8 +99,11 @@
       var minD = pos.length ? Math.min.apply(null, pos) : 0;
       data.nodes.forEach(function (n) {
         var norm = maxD > minD ? ((n.d || 0) - minD) / (maxD - minD) : 0.5;
-        n.__size = 4 + Math.sqrt(Math.max(0, norm)) * 22;
+        n.__size = 5 + Math.sqrt(Math.max(0, norm)) * 28;
       });
+      // always-label the most prominent ~22 entities so major nodes are readable at the default view
+      var sortedDeg = degs.slice().sort(function (a, b) { return b - a; });
+      var LABEL_THRESH = sortedDeg[Math.min(22, sortedDeg.length - 1)] || 1e9;
 
       // legend (types present)
       var present = {}; data.nodes.forEach(function (n) { present[n.t] = 1; });
@@ -151,7 +154,7 @@
           ctx.beginPath(); ctx.arc(node.x, node.y, isHov ? size * 1.3 : size, 0, 2 * Math.PI);
           ctx.fillStyle = isHov ? lighten(col, 0.3) : col; ctx.fill();
           if (isSel) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 2 / scale; ctx.stroke(); }
-          if (isHov || isSel || (!dimmed && scale > 0.8)) {
+          if (isHov || isSel || (!dimmed && (scale > 0.65 || node.d >= LABEL_THRESH))) {
             var lbl = node.n.length > 24 ? node.n.slice(0, 22) + '…' : node.n;
             var fs = Math.max(isHov ? 12 : 10, 3) / scale;
             ctx.font = (isHov ? 'bold ' : '') + fs + "px 'Courier New', monospace";
@@ -183,13 +186,23 @@
           }
         });
 
-      Graph.d3Force('charge').strength(-120);
-      Graph.d3Force('link').distance(70);
+      Graph.d3Force('charge').strength(-260);
+      Graph.d3Force('link').distance(120);
       // collision (from the full d3 bundle, which includes quadtree) so bigger nodes never overlap
-      if (window.d3 && d3.forceCollide) Graph.d3Force('collide', d3.forceCollide(function (n) { return (n.__size || 6) + 6; }).iterations(2));
+      if (window.d3 && d3.forceCollide) Graph.d3Force('collide', d3.forceCollide(function (n) { return (n.__size || 6) + 16; }).iterations(3));
 
-      var fitDone = false;
-      Graph.onEngineStop(function () { if (!fitDone) { Graph.zoomToFit(500, 60); fitDone = true; } });
+      var camDone = false;
+      Graph.onEngineStop(function () {
+        if (camDone) return; camDone = true;
+        // don't zoom-to-fit (it compresses the spread core back into overlap);
+        // land at a readable zoom centered on the graph — pan/scroll to explore the rest.
+        var ns = data.nodes.filter(function (n) { return visible.has(n.id) && n.x != null; });
+        if (!ns.length) return;
+        var coreN = ns.slice().sort(function (a, b) { return b.d - a.d; }).slice(0, 30);
+        var cx = coreN.reduce(function (s, n) { return s + n.x; }, 0) / coreN.length;
+        var cy = coreN.reduce(function (s, n) { return s + n.y; }, 0) / coreN.length;
+        Graph.centerAt(cx, cy, 800); Graph.zoom(1.5, 800);
+      });
 
       function render() {
         var ns = data.nodes.filter(function (n) { return visible.has(n.id); });

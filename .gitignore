@@ -13,3 +13,6 @@ node_modules/
 .DS_Store
 *.log
 screenshots/
+
+# internal positioning doc — never deploy or commit
+portfolio.md

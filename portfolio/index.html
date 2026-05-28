@@ -26,7 +26,11 @@
               <div class="name">Gnosis <span class="badge deployed">deployed</span></div>
               <div class="one">The private, event-driven AI platform behind everything else here.</div>
               <button class="case-btn" type="button">case study</button>
-              <div class="case-body" hidden><p>Public and private data flows through an ingestion layer into a knowledge graph and a time-series warehouse, where an autonomous agent layer reasons over it and ships results to a live dashboard. Go services move work across a message bus where <strong>every agent action is an auditable event</strong> — no agent calls another directly. Postgres, Neo4j, Elasticsearch, and Redis sit behind it, held together by ~2,200 automated tests. It runs on <strong>two consumer desktops over a 10&nbsp;GbE link</strong> — most of the intelligence is local, so there's no per-token bill for the volume work. I set direction; the platform runs the loop.</p></div>
+              <div class="case-body" hidden>
+                <p><b>What it does</b> Public and private data flows through an ingestion layer into a knowledge graph and a time-series warehouse, where an autonomous agent layer reasons over it and ships results to a live dashboard.</p>
+                <p><b>The infrastructure flex</b> Go services move work across a message bus where <strong>every agent action is an auditable event</strong> — no agent calls another directly. Postgres, Neo4j, Elasticsearch, and Redis sit behind it, held together by ~2,200 automated tests. It runs on <strong>two consumer desktops over a 10&nbsp;GbE link</strong> — most of the intelligence is local, so there's no per-token bill for the volume work.</p>
+                <p><b>How it's operated</b> I set direction; the platform runs the loop — roughly two dozen agents and services keep it moving without me in the path.</p>
+              </div>
             </div>
           </div>
         </div>
@@ -35,52 +39,64 @@
       <!-- ===== Band 2 — The workforce ===== -->
       <div class="band">
         <div class="band-head">The workforce</div>
-        <p class="band-sub">A named team, not a pile of scripts — one custom, bus-native harness running persistent, ephemeral, and non-LLM agents. Every action is a logged, replayable event.</p>
+        <p class="band-sub">A named team on one custom, bus-native harness — every action a logged, replayable event. Three run persistently; the rest spawn on demand. Backend (local Qwen or frontier Claude) is a config line, switchable per agent.</p>
         <div class="tiles">
           <div class="tile concept">
             <div class="body">
               <div class="name">Cosmo</div>
               <div class="one">The agent that runs the other agents.</div>
-              <div class="role">Chief of staff · <b>frontier (Claude)</b></div>
+              <div class="role">Chief of staff · persistent · <b>frontier (Claude Opus)</b></div>
               <button class="case-btn" type="button">case study</button>
-              <div class="case-body" hidden><p>A persistent agent that manages my attention the way a chief of staff manages an executive's: it triages what reaches me, delegates to specialist agents, and keeps a running memory of decisions and procedures so context survives across days. ~38 tools (filesystem, the knowledge graph, memory, task + kanban management); runs on a frontier model because this is the judgment seat. Everything it does is a logged bus event.</p></div>
+              <div class="case-body" hidden>
+                <p><b>What it does</b> A persistent chief-of-staff agent — it triages what reaches me, delegates to specialist agents, and keeps a running memory of decisions and procedures so context survives across days.</p>
+                <p><b>How it runs</b> On a frontier model (Claude Opus 4.7) because this is the judgment seat. Dozens of tools — filesystem, the knowledge graph, memory, task and kanban management — and every action is a logged bus event.</p>
+                <p><b>The design call</b> One agent I actually talk to, running the rest. Frontier-backed and given durable memory, it's what makes a 20+-agent operation legible to one person.</p>
+              </div>
             </div>
           </div>
           <div class="tile concept">
             <div class="body">
               <div class="name">Orca</div>
               <div class="one">Triage for a firehose of signals.</div>
-              <div class="role">Orchestrator · <b>local 27B</b></div>
+              <div class="role">Orchestrator · persistent · <b>local 27B</b></div>
               <button class="case-btn" type="button">case study</button>
-              <div class="case-body" hidden><p>Sits between the raw event bus and Cosmo, deciding in real time what's noise, what's an escalation, and what should become work — then dispatching it. Runs on the local 27B model (cheap, always-on), with deterministic durability sweeps so nothing stalls silently. Designed to <strong>fail safe</strong> — rate-capped, deduplicated, with a degraded-mode brake — because an orchestrator that can dispatch is an orchestrator that can flood.</p></div>
+              <div class="case-body" hidden>
+                <p><b>What it does</b> Sits between the raw event bus and Cosmo, deciding in real time what's noise, what's an escalation, and what should become work — then dispatching it.</p>
+                <p><b>How it runs</b> A deterministic supervisor with a local-27B triage call (cheap, always-on) and durability sweeps so nothing stalls silently.</p>
+                <p><b>The design call</b> Built to <strong>fail safe</strong> — rate-capped, deduplicated, with a degraded-mode brake — because an orchestrator that can dispatch is an orchestrator that can flood.</p>
+              </div>
             </div>
           </div>
           <div class="tile concept">
             <div class="body">
               <div class="name">Eagle</div>
-              <div class="one">Business profiling and outreach, as an autonomous agent.</div>
-              <div class="role">Sales-intel engine · <b>local 27B / SDK</b></div>
+              <div class="one">A sales employee, as an autonomous agent.</div>
+              <div class="role">Sales · persistent · <b>frontier (my org) / local 27B (clients)</b></div>
               <button class="case-btn" type="button">case study</button>
-              <div class="case-body" hidden><p>Builds business profiles, manages an outreach pipeline, runs briefings. It exists in two forms — local 27B and a frontier backend via the Agent SDK — the same agent, swapped by a config line. <strong>Structured by contract:</strong> the agent returns typed JSON and code does the writes, so nothing depends on the model calling a tool correctly.</p></div>
+              <div class="case-body" hidden>
+                <p><b>What it does</b> Builds business profiles, manages an outreach pipeline, and runs briefings — the engine behind the Scout app.</p>
+                <p><b>How it runs</b> Split by tenant: my own org routes to a frontier backend (a dedicated Agent-SDK container); client orgs run on local 27B. The same agent, swapped by a config line.</p>
+                <p><b>The design call</b> <strong>Structured by contract</strong> — the agent returns typed JSON and code does the writes, so nothing depends on the model calling a tool correctly.</p>
+              </div>
             </div>
           </div>
-          <div class="tile concept">
-            <div class="body">
-              <div class="name">Scout</div>
-              <div class="one">An internal agent capability, shipped as its own product.</div>
-              <div class="role">Sales-intel SaaS · <b>CF Workers + D1</b></div>
-              <button class="case-btn" type="button">case study</button>
-              <div class="case-body" hidden><p>A standalone SaaS surface (Hono + React on Cloudflare Workers, D1) that turns the platform's business-profiling into a usable app — campaigns, leads, outreach — on its own domain. A clean example of productizing an internal capability without rebuilding it.</p></div>
-            </div>
+        </div>
+
+        <div class="roster">
+          <div class="roster-group">
+            <div class="roster-label">Ephemeral · spawn → run → exit</div>
+            <ul class="roster-list">
+              <li>Coder <span class="fr">frontier</span></li>
+              <li>Researcher <span class="lo">27B</span></li>
+              <li>Executor <span class="lo">27B</span></li>
+              <li>Consolidator <span class="lo">27B</span></li>
+              <li>Lab&nbsp;Bot <span class="fr">frontier</span></li>
+              <li>Seed&nbsp;Researcher <span class="fr">frontier</span></li>
+            </ul>
           </div>
-          <div class="tile concept">
-            <div class="body">
-              <div class="name">Sentinel</div>
-              <div class="one">The agent that watches the other agents.</div>
-              <div class="role">SRE · <b>TypeScript / Node</b></div>
-              <button class="case-btn" type="button">case study</button>
-              <div class="case-body" hidden><p>A monitoring service that watches the platform like an SRE: Docker events, consumer lag on the bus, model health. Its design principle is hard-won — <strong>measure liveness by real work progress, not heartbeats</strong> — after green health checks once masked a stalled pipeline. It's why a 20-agent system run by one person doesn't quietly fall over.</p></div>
-            </div>
+          <div class="roster-group">
+            <div class="roster-label">Services · non-LLM &amp; the ETL/intelligence pipeline</div>
+            <p class="roster-note"><b>Sentinel</b> (a non-LLM SRE monitor — it measures liveness by real work progress, not heartbeats) plus ~16 Python pipeline agents on the same bus: ingest, knowledge, warehouse, analyst, enrichment, research, quant, geopolitical, social, flow, comber, QA, and more.</p>
           </div>
         </div>
       </div>
@@ -96,7 +112,11 @@
               <div class="name"><a href="https://tailatlas.com" target="_blank" rel="noopener">Tail Atlas</a> <span class="badge deployed">deployed</span></div>
               <div class="one">One clean picture of the world fleet, from sources that all disagree.</div>
               <button class="case-btn" type="button">case study</button>
-              <div class="case-body" hidden><p>710,000 aircraft and 313,000 owners served at the edge (1.3M+ in the full pipeline), assembled from <strong>~25 aviation registries</strong> plus live position data. A Python pipeline normalizes them over the bus into Postgres; a React + Hono app serves it from Cloudflare Workers, D1, and R2 — fast and cheap, with 435 tests. The volume isn't the hard part — making tail numbers, airframes, and type certificates <strong>agree across contradictory sources with no hand-curation</strong> is. That resolution layer is the product.</p></div>
+              <div class="case-body" hidden>
+                <p><b>What it does</b> 710,000 aircraft and 313,000 owners served at the edge — 1.25M entity relationships — assembled from dozens of aviation registries plus live position data.</p>
+                <p><b>The infrastructure flex</b> A React + Hono app on Cloudflare Workers, D1, and R2 — fast and cheap, with 435 tests. The volume isn't the hard part; making tail numbers, airframes, and type certificates <strong>agree across contradictory sources with no hand-curation</strong> is. That resolution layer is the product.</p>
+                <p><b>The agent angle</b> A Python pipeline normalizes every registry over the same platform bus into Postgres before the edge ever sees it — the workforce does the reconciliation.</p>
+              </div>
             </div>
           </div>
           <div class="tile">
@@ -105,7 +125,11 @@
               <div class="name"><a href="https://telekora.com" target="_blank" rel="noopener">Telekora</a> <span class="badge deployed">deployed</span></div>
               <div class="one">Generate a whole course — slides, images, quizzes — from a prompt.</div>
               <button class="case-btn" type="button">case study</button>
-              <div class="case-body" hidden><p>A multi-tenant B2B LMS where each tenant brings their own model: <strong>per-tenant LLM keys are envelope-encrypted in Cloudflare Secrets Store</strong>, and course generation uses forced tool-use against a strict schema, so the output is always valid JSON — never a parsing gamble. A Hono API on Cloudflare Workers with D1, R2, and KV; Stripe billing, Google auth, and a Telegram Mini App front end. A complete SaaS, not a demo.</p></div>
+              <div class="case-body" hidden>
+                <p><b>What it does</b> A multi-tenant B2B LMS — "tools, not cards" — where each tenant brings their own model and builds full courses from a prompt.</p>
+                <p><b>The infrastructure flex</b> Per-tenant LLM keys are <strong>envelope-encrypted in Cloudflare Secrets Store</strong>, and course generation uses forced tool-use against a strict schema, so the output is always valid JSON — never a parsing gamble. A Hono API on Cloudflare Workers with D1, R2, and KV; Stripe billing, Google auth, a Telegram Mini App front end.</p>
+                <p><b>The agent angle</b> Course-building runs as a dedicated, metered, per-tenant generation step gated by a credit pool — productized AI, not a demo.</p>
+              </div>
             </div>
           </div>
           <div class="tile">
@@ -114,7 +138,24 @@
               <div class="name"><a href="https://hometownwire.com" target="_blank" rel="noopener">HometownWire</a> <span class="badge flight">in&nbsp;flight</span></div>
               <div class="one">Turning the public record into something you can actually search.</div>
               <button class="case-btn" type="button">case study</button>
-              <div class="case-body" hidden><p>Council meetings, votes, and speaker-labeled transcripts, made searchable and readable. A React + Hono app on Cloudflare Workers over a civic corpus in D1 — and the data lands through the <strong>same platform pipeline as everything else</strong>, as additive handlers, so there's no separate stack to maintain. The hard part of civic data is sourcing and structuring it; the platform already does both.</p></div>
+              <div class="case-body" hidden>
+                <p><b>What it does</b> Council meetings, votes, and speaker-labeled transcripts, made searchable and readable.</p>
+                <p><b>The infrastructure flex</b> A React + Hono app on Cloudflare Workers over a civic corpus in D1.</p>
+                <p><b>The agent angle</b> The data lands through the <strong>same platform pipeline as everything else</strong>, as additive handlers — no separate stack to maintain. The hard part of civic data is sourcing and structuring it; the platform already does both.</p>
+              </div>
+            </div>
+          </div>
+          <div class="tile">
+            <div class="shot ph">sales intelligence</div>
+            <div class="body">
+              <div class="name">Scout <span class="badge deployed">deployed</span></div>
+              <div class="one">The platform's business-profiling, shipped as its own SaaS.</div>
+              <button class="case-btn" type="button">case study</button>
+              <div class="case-body" hidden>
+                <p><b>What it does</b> A B2B sales-intelligence app — campaigns, leads, and outreach — on its own domain.</p>
+                <p><b>The infrastructure flex</b> Hono + React on Cloudflare Workers and D1.</p>
+                <p><b>The agent angle</b> <strong>Eagle</strong> is the engine underneath — a clean example of productizing an internal agent capability without rebuilding it.</p>
+              </div>
             </div>
           </div>
           <div class="tile">
@@ -123,7 +164,11 @@
               <div class="name"><a href="/">Port Foliopolis</a> <span class="badge live">live</span></div>
               <div class="one">A playable RPG where the NPCs are live LLMs.</div>
               <button class="case-btn" type="button">case study</button>
-              <div class="case-body" hidden><p>Haggle with a business hog, reason your way past an ancient demilich — the dialogue is generated live. Phaser on Cloudflare Pages; the NPC brains run on free-tier models behind a Worker that <strong>holds the keys server-side, caps usage per visitor, and fails closed</strong>, so a toy can never run up a bill. Built in about six hours — a sample of the velocity, not the headline.</p></div>
+              <div class="case-body" hidden>
+                <p><b>What it does</b> Haggle with a business hog, reason your way past an ancient demilich — the dialogue is generated live.</p>
+                <p><b>The infrastructure flex</b> Phaser on Cloudflare Pages; the NPC brains run on free-tier models behind a Worker that <strong>holds the keys server-side, caps usage per visitor, and fails closed</strong>, so a toy can never run up a bill.</p>
+                <p><b>The angle</b> Built in about six hours — a sample of the velocity, not the headline.</p>
+              </div>
             </div>
           </div>
           <div class="tile">
@@ -146,15 +191,23 @@
               <div class="name">Bamboo <span class="badge deployed">deployed</span></div>
               <div class="one">I didn't pick an agent framework. I built one.</div>
               <button class="case-btn" type="button">case study</button>
-              <div class="case-body" hidden><p>The runtime under every agent above. It started as a containerized bot and got rebuilt until <strong>every agent action flows through the message bus and is auditable</strong> — no agent calls another directly, so the whole system is logged and replayable. One config line swaps an agent between <strong>local inference and a frontier model</strong>; a new agent is a manifest plus a prompt, no runtime code. It runs persistent, ephemeral, and multi-tenant agents on one substrate — the reason one person can operate a 20-agent organization.</p></div>
+              <div class="case-body" hidden>
+                <p><b>What it does</b> The runtime under every agent above — the harness that gives them tools, memory, dispatch, and isolation.</p>
+                <p><b>The infrastructure flex</b> <strong>Every agent action flows through the message bus and is auditable</strong> — no agent calls another directly, so the whole system is logged and replayable. One config line swaps an agent between local inference and a frontier model; a new agent is a manifest plus a prompt, no runtime code.</p>
+                <p><b>Why it matters</b> It runs persistent, ephemeral, and multi-tenant agents on one substrate — the reason one person can operate a 20+-agent organization.</p>
+              </div>
             </div>
           </div>
           <div class="tile concept">
             <div class="body">
-              <div class="name">otter-docs <span class="badge shipped">shipped · PyPI</span></div>
+              <div class="name"><a href="https://pypi.org/project/otter-docs/" target="_blank" rel="noopener">otter-docs</a> <span class="badge shipped">PyPI · MIT</span></div>
               <div class="one">Open-source codebase intelligence for any language.</div>
               <button class="case-btn" type="button">case study</button>
-              <div class="case-body" hidden><p>A polyglot code-intelligence library — tree-sitter ASTs + cross-file symbol resolution + LLM-generated findings and diffs. MIT-licensed, on PyPI, 354 tests, and <strong>F1 0.854 on a Type-4 semantic-clone benchmark</strong>. Auto-docs and senior-dev-style review that run on any codebase, not just mine.</p></div>
+              <div class="case-body" hidden>
+                <p><b>What it does</b> A polyglot code-intelligence library — tree-sitter ASTs, cross-file symbol resolution, and LLM-generated findings and diffs. Auto-docs and senior-dev-style review that run on any codebase, not just mine.</p>
+                <p><b>The infrastructure flex</b> MIT-licensed, published on PyPI, 354 tests.</p>
+                <p><b>The proof</b> <strong>F1 0.854 on a Type-4 semantic-clone benchmark</strong> — the hard case, where two functions do the same thing with no shared text.</p>
+              </div>
             </div>
           </div>
         </div>

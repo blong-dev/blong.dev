@@ -139,6 +139,21 @@ h2{font-size:1.5rem;color:var(--gold);margin:0 0 6px;letter-spacing:2px;text-tra
   text-transform:uppercase;color:var(--parchment-dim);margin-top:7px;}
 .tile .role b{color:var(--gold);font-weight:normal;}
 .tile.concept .body{padding-top:16px;}
+
+/* workforce roster — the agents not given a marquee tile */
+.roster{margin:20px 0 4px;display:grid;gap:20px;}
+.roster-label{font-family:'Courier New',monospace;font-size:.66rem;letter-spacing:1px;
+  text-transform:uppercase;color:var(--parchment-dim);margin-bottom:9px;}
+.roster-list{list-style:none;display:flex;flex-wrap:wrap;gap:8px;margin:0;padding:0;}
+.roster-list li{background:var(--obsidian-2);border:1px solid var(--line);border-radius:6px;
+  padding:6px 10px;font-family:'Courier New',monospace;font-size:.8rem;color:var(--parchment);
+  display:flex;align-items:center;gap:8px;}
+.roster-list li span{font-size:.58rem;letter-spacing:.5px;text-transform:uppercase;
+  border:1px solid var(--line);border-radius:99px;padding:1px 6px;color:var(--parchment-dim);}
+.roster-list li span.fr{color:#8fc7e0;border-color:#37596b;}
+.roster-list li span.lo{color:var(--gold);border-color:#6b5524;}
+.roster-note{color:var(--parchment-dim);font-size:.85rem;line-height:1.5;margin:0;max-width:700px;}
+.roster-note b{color:var(--parchment);font-weight:normal;}
 .case-btn{margin-top:11px;width:100%;text-align:left;border:none;border-top:1px solid var(--line);
   background:none;padding:9px 0 0;cursor:pointer;font-family:'Courier New',monospace;font-size:.68rem;
   letter-spacing:1px;text-transform:uppercase;color:var(--gold);}
@@ -156,7 +171,11 @@ h2{font-size:1.5rem;color:var(--gold);margin:0 0 6px;letter-spacing:2px;text-tra
 .case-x:hover{background:var(--red);color:#fff;}
 .case-title{font-family:'Courier New',monospace;color:var(--gold);font-size:1.3rem;margin:0 34px 2px 0;letter-spacing:1px;}
 .case-sub{color:var(--parchment-dim);font-style:italic;font-size:.9rem;margin:0 0 14px;}
-.case-content p{color:var(--parchment);font-size:.95rem;line-height:1.6;margin:0;}
+.case-content p{color:var(--parchment);font-size:.92rem;line-height:1.55;margin:0 0 14px;}
+.case-content p:last-child{margin-bottom:0;}
+.case-content p>b:first-child{display:block;color:var(--gold);font-family:'Courier New',monospace;
+  font-size:.64rem;letter-spacing:1px;text-transform:uppercase;font-weight:normal;margin-bottom:3px;}
+.case-content strong{color:var(--parchment);font-weight:bold;}
 .tile .shot.ph a,.tile .shot.ph{color:var(--parchment-dim);text-decoration:none;}
 .port-closer{font-family:'Courier New',monospace;color:var(--gold);font-size:1rem;
   letter-spacing:1px;text-align:center;margin:50px 0 6px;padding-top:28px;border-top:1px solid var(--line);}

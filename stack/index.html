@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Gnosis — system map</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<style>
+  :root{
+    --bg:#0b1020; --ink:#e5edf7; --mut:#8aa0bd; --line:#3a4a66;
+    --ing:#22c55e; --pipe:#a855f7; --wf:#c084fc; --data:#3b82f6;
+    --inf:#2dd4bf; --surf:#818cf8; --prod:#38bdf8; --bus:#f59e0b;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
+    font-family:Helvetica,Arial,sans-serif;overflow:hidden;-webkit-user-select:none;user-select:none}
+  #vp{position:absolute;inset:0;overflow:hidden;cursor:grab}
+  #vp.drag{cursor:grabbing}
+  #world{position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform}
+  svg#edges{position:absolute;top:0;left:0;overflow:visible}
+  .edge{fill:none;stroke:var(--line);stroke-width:2;opacity:.5}
+  .edge.hl{stroke:#fff;opacity:1;stroke-width:3}
+  .hit{fill:none;stroke:transparent;stroke-width:18;cursor:pointer;pointer-events:stroke}
+  .region{position:absolute;border:2px solid;border-radius:26px;background:rgba(255,255,255,.015)}
+  .rlabel{position:absolute;font-weight:800;letter-spacing:2.5px;text-transform:uppercase;
+    font-size:29px;opacity:.92;transition:opacity .4s;pointer-events:none}
+  .node{position:absolute;border-radius:14px;color:#fff;padding:10px 13px;cursor:pointer;
+    display:flex;flex-direction:column;justify-content:center;border:1px solid rgba(255,255,255,.10);
+    box-shadow:0 6px 20px rgba(0,0,0,.35);opacity:0;transition:opacity .35s,outline-color .2s}
+  .node .nlabel{font-weight:700;font-size:14.5px;line-height:1.12;pointer-events:none}
+  .node .ndetail{font-size:11px;opacity:0;margin-top:3px;transition:opacity .3s;line-height:1.3;color:rgba(255,255,255,.86);pointer-events:none}
+  .node.hub{align-items:center;text-align:center;color:#0b1020;border:none;opacity:1}
+  .node.hub .ndetail{color:rgba(11,16,32,.8)}
+  .node.ext .ndetail{color:var(--mut)}
+  .node.sel{outline:3px solid #fff;outline-offset:3px}
+  [data-lod="2"] .node,[data-lod="3"] .node,[data-lod="4"] .node{opacity:1}
+  [data-lod="3"] .node .ndetail,[data-lod="4"] .node .ndetail{opacity:1}
+  [data-lod="3"] .rlabel,[data-lod="4"] .rlabel{opacity:.10}
+  /* chrome */
+  #ctl{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:30;display:flex;gap:7px}
+  #ctl button{background:#101a30;border:1px solid #2a3a58;border-radius:999px;padding:7px 14px;
+    font-size:13px;cursor:pointer;font-weight:600;color:var(--ink)}
+  #ctl button:hover{background:#1a263f}
+  #ctl .play{background:var(--bus);color:#0b1020;border-color:var(--bus)}
+  #cap{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:30;max-width:min(640px,92vw);
+    text-align:center;background:rgba(12,18,33,.9);border:1px solid #25324d;border-radius:14px;
+    padding:11px 18px;box-shadow:0 10px 34px rgba(0,0,0,.5)}
+  #cap b{display:block;font-size:14px;margin-bottom:2px;color:#fff}
+  #cap span{font-size:12.5px;color:var(--mut)}
+  #detail{position:fixed;top:88px;right:16px;width:340px;max-height:68vh;overflow:auto;z-index:30;
+    background:#0f1830;border:1px solid #25324d;border-left:5px solid var(--mut);border-radius:14px;
+    padding:16px 18px;box-shadow:0 18px 50px rgba(0,0,0,.55);
+    opacity:0;transform:translateX(14px);pointer-events:none;transition:opacity .25s,transform .25s}
+  #detail.show{opacity:1;transform:none;pointer-events:auto}
+  #detail .k{font-size:10px;text-transform:uppercase;letter-spacing:1.6px;color:var(--mut)}
+  #detail h4{margin:5px 0 8px;font-size:16px;color:#fff;line-height:1.2}
+  #detail p{margin:0;font-size:13.5px;line-height:1.55;color:var(--ink)}
+  #detail .x{position:absolute;top:10px;right:12px;color:var(--mut);cursor:pointer;font-size:16px}
+  #hint{position:fixed;left:12px;bottom:12px;color:var(--mut);font-size:11px;z-index:30}
+</style>
+</head>
+<body>
+<div id="ctl"><button class="play" id="play">▶ Tour</button><button id="prev">⏮</button><button id="next">⏭</button><button id="fit">Overview</button></div>
+<div id="vp"><div id="world"><svg id="edges"></svg></div></div>
+<div id="cap"><b>Gnosis</b><span>Press Tour, or click any node / edge to read its spec.</span></div>
+<div id="detail"></div>
+<div id="hint">scroll = zoom · drag = pan · click = open spec</div>
+<script src="system.js"></script>
+<script src="layout.js"></script>
+<script>
+const SYS=window.SYS, L=window.LAYOUT, WORLD=(L&&L.world)||SYS.world;
+const svgNS='http://www.w3.org/2000/svg';
+const N={}; SYS.nodes.forEach(n=>N[n.id]=n); const bus=SYS.bus; N[bus.id]=bus;
+if(L){ SYS.regions.forEach(rg=>{const b=L.regions[rg.id]; if(b)Object.assign(rg,b);});
+       SYS.nodes.concat([bus]).forEach(n=>{const b=L.nodes[n.id]; if(b)Object.assign(n,b);}); }
+const ctr=n=>({x:n.x+n.w/2,y:n.y+n.h/2});
+const cssvar=c=>getComputedStyle(document.documentElement).getPropertyValue('--'+c).trim();
+
+const world=document.getElementById('world'), svg=document.getElementById('edges'), vp=document.getElementById('vp'), detail=document.getElementById('detail');
+world.style.width=WORLD.w+'px'; world.style.height=WORLD.h+'px';
+svg.setAttribute('width',WORLD.w); svg.setAttribute('height',WORLD.h);
+svg.innerHTML='<defs><marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#3a4a66"/></marker></defs>';
+const edgeEls=[];
+SYS.edges.forEach((e,i)=>{ const a=ctr(N[e.a]),b=ctr(N[e.b]); e.mid={x:(a.x+b.x)/2,y:(a.y+b.y)/2};
+  const d=(L&&L.edgePaths&&L.edgePaths[e.a+'>'+e.b])||('M'+a.x+','+a.y+' L'+b.x+','+b.y);
+  const ln=document.createElementNS(svgNS,'path'); ln.setAttribute('d',d); ln.setAttribute('class','edge');
+  if(e.dotted)ln.setAttribute('stroke-dasharray','6 6'); ln.setAttribute('marker-end','url(#ah)'); svg.appendChild(ln); edgeEls[i]=ln;
+  const hit=document.createElementNS(svgNS,'path'); hit.setAttribute('d',d); hit.setAttribute('class','hit');
+  hit.addEventListener('click',ev=>{ev.stopPropagation();selectEdge(i);}); svg.appendChild(hit);
+});
+SYS.regions.forEach(rg=>{ const c=cssvar(rg.cls);
+  const d=document.createElement('div'); d.className='region'; d.style.cssText=`left:${rg.x}px;top:${rg.y}px;width:${rg.w}px;height:${rg.h}px;border-color:${c}`; world.appendChild(d);
+  const l=document.createElement('div'); l.className='rlabel'; l.textContent=rg.label; l.style.cssText=`left:${rg.x+20}px;top:${rg.y+16}px;color:${c}`; world.appendChild(l);
+});
+function nodeEl(n,fill,hub){ const d=document.createElement('div'); d.className='node'+(hub?' hub':''); d.id='n-'+n.id;
+  d.style.cssText=`left:${n.x}px;top:${n.y}px;width:${n.w}px;height:${n.h}px;background:${fill}`+(hub?';font-size:17px':'');
+  if(n.ext){d.classList.add('ext');d.style.background='rgba(148,163,184,.07)';d.style.border='2px dashed '+fill;d.style.color='var(--ink)';}
+  d.innerHTML=`<div class="nlabel">${n.label}</div><div class="ndetail">${n.detail||''}</div>`;
+  d.addEventListener('click',ev=>{ev.stopPropagation();selectNode(n.id);}); world.appendChild(d);
+}
+SYS.regions.forEach(rg=>{ const c=cssvar(rg.cls); SYS.nodes.filter(n=>n.r===rg.id).forEach(n=>nodeEl(n,c,false)); });
+nodeEl(bus, cssvar('bus'), true);
+
+// camera
+let cam={s:1,x:0,y:0}, anim=null, selNode=null, selEdge=-1;
+function lod(){const s=cam.s; world.dataset.lod = s<0.45?1 : s<1.0?2 : s<2.2?3 : 4;}
+function apply(){ world.style.transform=`translate(${cam.x}px,${cam.y}px) scale(${cam.s})`; lod(); }
+const ease=t=>t<.5?4*t*t*t:1-Math.pow(-2*t+2,3)/2;
+function flyTo(rect,pad=0.82,ms=950){ const W=vp.clientWidth,H=vp.clientHeight;
+  const ts=Math.min(W/rect.w,H/rect.h)*pad, tx=W/2-(rect.x+rect.w/2)*ts, ty=H/2-(rect.y+rect.h/2)*ts;
+  const f={...cam},t0=performance.now(); if(anim)cancelAnimationFrame(anim);
+  (function st(now){const k=Math.min(1,(now-t0)/ms),e=ease(k);
+    cam.s=f.s+(ts-f.s)*e;cam.x=f.x+(tx-f.x)*e;cam.y=f.y+(ty-f.y)*e;apply();
+    if(k<1)anim=requestAnimationFrame(st);})(t0);
+}
+const around=(c,half)=>({x:c.x-half,y:c.y-half,w:half*2,h:half*2});
+
+// ── detail panel ──
+function highlight(node,edge){
+  if(selNode){const el=document.getElementById('n-'+selNode);if(el)el.classList.remove('sel');}
+  if(selEdge>=0&&edgeEls[selEdge])edgeEls[selEdge].classList.remove('hl');
+  selNode=node||null; selEdge=(edge==null?-1:edge);
+  if(selNode){const el=document.getElementById('n-'+selNode);if(el)el.classList.add('sel');}
+  if(selEdge>=0&&edgeEls[selEdge])edgeEls[selEdge].classList.add('hl');
+}
+function clearDetail(){ detail.classList.remove('show'); highlight(null,null); }
+function detailNode(id){ const n=N[id]; if(!n)return; highlight(id,null);
+  detail.innerHTML=`<span class="x" onclick="clearDetail()">✕</span><div class="k">node</div><h4>${n.label}</h4><p>${n.spec}</p>`; detail.classList.add('show'); }
+function detailEdge(i){ const e=SYS.edges[i]; if(!e)return; highlight(null,i);
+  detail.innerHTML=`<span class="x" onclick="clearDetail()">✕</span><div class="k">edge · connects</div><h4>${N[e.a].label} → ${N[e.b].label}</h4><p>${e.spec}</p>`; detail.classList.add('show'); }
+function selectNode(id){ const n=N[id]; flyTo(around(ctr(n),Math.max(n.w,300)),0.6); detailNode(id); }
+function selectEdge(i){ const e=SYS.edges[i]; flyTo(around(e.mid,280),0.7); detailEdge(i); }
+window.clearDetail=clearDetail;
+
+// ── tour ──
+const blurb={ing:"147 source configs pull the public record onto the bus.",
+  pipe:"Agents that build the knowledge graph + warehouse off the bus.",
+  data:"Graph, warehouse, board, search, cache, identity.",
+  wf:"The AI workforce — Cosmo runs it via the board; workers spawn per card.",
+  inf:"Local-first: 9B for tasks, 27B (524K) for agents, Claude for the hard 5%.",
+  surf:"The gateway and the private operator dashboard.",
+  prod:"What ships on top."};
+function rrect(rg){return {x:rg.x,y:rg.y,w:rg.w,h:rg.h};}
+const RG={}; SYS.regions.forEach(r=>RG[r.id]=r);
+const okIdx=SYS.edges.findIndex(e=>e.a==='orca'&&e.b==='kanban');
+const FRAMES=[
+  {rect:{x:0,y:0,w:WORLD.w,h:WORLD.h},pad:.92,b:"Gnosis",s:"The whole system — every territory, every wire."},
+  {rect:rrect(RG.ing),pad:.8,b:"Ingestion",s:blurb.ing},
+  {rect:around(ctr(bus),340),pad:.8,b:"The event bus",s:"The spine — every action an event, no agent-to-agent calls."},
+  {rect:rrect(RG.pipe),pad:.85,b:"Pipeline agents",s:blurb.pipe},
+  {rect:rrect(RG.data),pad:.82,b:"Data",s:blurb.data},
+  {rect:rrect(RG.wf),pad:.85,b:"AI Workforce",s:blurb.wf},
+  {rect:around(ctr(N.cosmo),320),pad:.55,b:"Cosmo — the brief",s:"Click any tile for its dossier; here's the chief of staff.",node:"cosmo"},
+  {rect:around(SYS.edges[okIdx].mid,280),pad:.7,b:"An edge, in full",s:"Click any edge for what it connects + why.",edge:okIdx},
+  {rect:rrect(RG.inf),pad:.82,b:"Inference",s:blurb.inf},
+  {rect:rrect(RG.surf),pad:.8,b:"Surfaces",s:blurb.surf},
+  {rect:rrect(RG.prod),pad:.82,b:"Products",s:blurb.prod},
+  {rect:{x:0,y:0,w:WORLD.w,h:WORLD.h},pad:.92,b:"All of it",s:"Every node and every edge has a spec — click anything to read it."},
+];
+let fi=-1, tour=null;
+function go(i){fi=(i+FRAMES.length)%FRAMES.length; const f=FRAMES[fi];
+  document.querySelector('#cap b').textContent=f.b; document.querySelector('#cap span').textContent=f.s;
+  flyTo(f.rect,f.pad);
+  if(f.node)detailNode(f.node); else if(f.edge!=null)detailEdge(f.edge); else clearDetail();}
+function stopTour(){if(tour){clearInterval(tour);tour=null;document.getElementById('play').textContent='▶ Tour';}}
+document.getElementById('play').onclick=()=>{ if(tour){stopTour();return;}
+  document.getElementById('play').textContent='⏸ Stop'; go(0);
+  tour=setInterval(()=>{ if(fi>=FRAMES.length-1){stopTour();return;} go(fi+1); },4600); };
+document.getElementById('next').onclick=()=>{stopTour();go(fi+1);};
+document.getElementById('prev').onclick=()=>{stopTour();go(fi-1);};
+document.getElementById('fit').onclick=()=>{stopTour();go(0);};
+addEventListener('keydown',e=>{if(e.key==='ArrowRight'){stopTour();go(fi+1);}if(e.key==='ArrowLeft'){stopTour();go(fi-1);}if(e.key==='Escape')clearDetail();});
+
+// free roam — no pointer capture (so clicks land on nodes/edges)
+vp.addEventListener('wheel',e=>{e.preventDefault();stopTour();
+  const r=vp.getBoundingClientRect(),px=e.clientX-r.left,py=e.clientY-r.top,f=e.deltaY<0?1.18:1/1.18;
+  const ns=Math.max(.12,Math.min(28,cam.s*f));
+  cam.x=px-((px-cam.x)/cam.s)*ns; cam.y=py-((py-cam.y)/cam.s)*ns; cam.s=ns; apply();
+},{passive:false});
+let drag=null, moved=false;
+vp.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY};moved=false;vp.classList.add('drag');});
+vp.addEventListener('pointermove',e=>{if(!drag)return; if(Math.abs(e.clientX-drag.x)+Math.abs(e.clientY-drag.y)>3){moved=true;stopTour();}
+  cam.x+=e.clientX-drag.x;cam.y+=e.clientY-drag.y;drag={x:e.clientX,y:e.clientY};apply();});
+vp.addEventListener('pointerup',()=>{drag=null;vp.classList.remove('drag');});
+vp.addEventListener('click',()=>{ if(!moved) clearDetail(); });  // background click clears
+
+go(0);
+</script>
+</body>
+</html>

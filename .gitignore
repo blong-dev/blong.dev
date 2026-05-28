@@ -16,3 +16,16 @@ screenshots/
 
 # internal positioning doc — never deploy or commit
 portfolio.md
+
+# internal dossiers (security findings, no-customer notes) — never deploy or commit
+dossiers/
+
+# /stack map: ship index.html + system.js + layout.js; keep build tooling/artifacts internal
+stack/tour.html
+stack/build-layout.js
+stack/system-map.dot
+stack/system-map.svg
+stack/system-map.png
+stack/workspace.dsl
+stack/workspace.json
+stack/*.err

@@ -13,7 +13,7 @@
     <section>
       <div class="page-head">
         <h2>Portfolio</h2>
-        <p class="section-sub">A private AI platform, the autonomous workforce that operates it, and the apps shipped on top — built and run solo. Open any tile for the case study.</p>
+        <p class="section-sub">A private AI platform, the autonomous workforce that operates it, and the apps shipped on top — built and run solo. Click any tile for the case study.</p>
       </div>
 
       <!-- ===== Band 1 — Platform ===== -->
@@ -25,7 +25,7 @@
             <div class="body">
               <div class="name">Gnosis <span class="badge deployed">deployed</span></div>
               <div class="one">The private, event-driven AI platform behind everything else here.</div>
-              <button class="case-btn" type="button">case study</button>
+              <div class="card-cue">case study</div>
               <div class="case-body" hidden>
                 <p><b>What it does</b> Public and private data flows through an ingestion layer into a knowledge graph and a time-series warehouse, where an autonomous agent layer reasons over it and ships results to a live dashboard.</p>
                 <p><b>The infrastructure flex</b> Go services move work across a message bus where <strong>every agent action is an auditable event</strong> — no agent calls another directly. Postgres, Neo4j, Elasticsearch, and Redis sit behind it, held together by ~2,200 automated tests. It runs on <strong>two consumer desktops over a 10&nbsp;GbE link</strong> — most of the intelligence is local, so there's no per-token bill for the volume work.</p>
@@ -46,7 +46,7 @@
               <div class="name">Cosmo</div>
               <div class="one">The agent that runs the other agents.</div>
               <div class="role">Chief of staff · persistent · <b>frontier (Claude Opus)</b></div>
-              <button class="case-btn" type="button">case study</button>
+              <div class="card-cue">case study</div>
               <div class="case-body" hidden>
                 <p><b>What it does</b> A persistent chief-of-staff agent — it triages what reaches me, delegates to specialist agents, and keeps a running memory of decisions and procedures so context survives across days.</p>
                 <p><b>How it runs</b> On a frontier model (Claude Opus 4.7) because this is the judgment seat. Dozens of tools — filesystem, the knowledge graph, memory, task and kanban management — and every action is a logged bus event.</p>
@@ -59,7 +59,7 @@
               <div class="name">Orca</div>
               <div class="one">Triage for a firehose of signals.</div>
               <div class="role">Orchestrator · persistent · <b>local 27B</b></div>
-              <button class="case-btn" type="button">case study</button>
+              <div class="card-cue">case study</div>
               <div class="case-body" hidden>
                 <p><b>What it does</b> Sits between the raw event bus and Cosmo, deciding in real time what's noise, what's an escalation, and what should become work — then dispatching it.</p>
                 <p><b>How it runs</b> A deterministic supervisor with a local-27B triage call (cheap, always-on) and durability sweeps so nothing stalls silently.</p>
@@ -72,7 +72,7 @@
               <div class="name">Eagle</div>
               <div class="one">A sales employee, as an autonomous agent.</div>
               <div class="role">Sales · persistent · <b>frontier (my org) / local 27B (clients)</b></div>
-              <button class="case-btn" type="button">case study</button>
+              <div class="card-cue">case study</div>
               <div class="case-body" hidden>
                 <p><b>What it does</b> Builds business profiles, manages an outreach pipeline, and runs briefings — the engine behind the Scout app.</p>
                 <p><b>How it runs</b> Split by tenant: my own org routes to a frontier backend (a dedicated Agent-SDK container); client orgs run on local 27B. The same agent, swapped by a config line.</p>
@@ -104,14 +104,14 @@
       <!-- ===== Band 3 — Apps ===== -->
       <div class="band">
         <div class="band-head">Apps</div>
-        <p class="band-sub">Shipped on the platform. Live ones link out.</p>
+        <p class="band-sub">Shipped on the platform. Click through for the case study and a link out.</p>
         <div class="tiles">
-          <div class="tile">
-            <a href="https://tailatlas.com" target="_blank" rel="noopener"><div class="shot" style="background-image:url('/assets/portfolio/tailatlas.jpg')"></div></a>
+          <div class="tile" data-link="https://tailatlas.com">
+            <div class="shot" style="background-image:url('/assets/portfolio/tailatlas.jpg')"></div>
             <div class="body">
-              <div class="name"><a href="https://tailatlas.com" target="_blank" rel="noopener">Tail Atlas</a> <span class="badge deployed">deployed</span></div>
+              <div class="name">Tail Atlas <span class="badge deployed">deployed</span></div>
               <div class="one">One clean picture of the world fleet, from sources that all disagree.</div>
-              <button class="case-btn" type="button">case study</button>
+              <div class="card-cue">case study</div>
               <div class="case-body" hidden>
                 <p><b>What it does</b> 710,000 aircraft and 313,000 owners served at the edge — 1.25M entity relationships — assembled from dozens of aviation registries plus live position data.</p>
                 <p><b>The infrastructure flex</b> A React + Hono app on Cloudflare Workers, D1, and R2 — fast and cheap, with 435 tests. The volume isn't the hard part; making tail numbers, airframes, and type certificates <strong>agree across contradictory sources with no hand-curation</strong> is. That resolution layer is the product.</p>
@@ -119,12 +119,12 @@
               </div>
             </div>
           </div>
-          <div class="tile">
-            <a href="https://telekora.com" target="_blank" rel="noopener"><div class="shot" style="background-image:url('/assets/portfolio/telekora.jpg')"></div></a>
+          <div class="tile" data-link="https://telekora.com">
+            <div class="shot" style="background-image:url('/assets/portfolio/telekora.jpg')"></div>
             <div class="body">
-              <div class="name"><a href="https://telekora.com" target="_blank" rel="noopener">Telekora</a> <span class="badge deployed">deployed</span></div>
+              <div class="name">Telekora <span class="badge deployed">deployed</span></div>
               <div class="one">Generate a whole course — slides, images, quizzes — from a prompt.</div>
-              <button class="case-btn" type="button">case study</button>
+              <div class="card-cue">case study</div>
               <div class="case-body" hidden>
                 <p><b>What it does</b> A multi-tenant B2B LMS — "tools, not cards" — where each tenant brings their own model and builds full courses from a prompt.</p>
                 <p><b>The infrastructure flex</b> Per-tenant LLM keys are <strong>envelope-encrypted in Cloudflare Secrets Store</strong>, and course generation uses forced tool-use against a strict schema, so the output is always valid JSON — never a parsing gamble. A Hono API on Cloudflare Workers with D1, R2, and KV; Stripe billing, Google auth, a Telegram Mini App front end.</p>
@@ -132,12 +132,12 @@
               </div>
             </div>
           </div>
-          <div class="tile">
-            <a href="https://hometownwire.com" target="_blank" rel="noopener"><div class="shot" style="background-image:url('/assets/portfolio/hometownwire.jpg')"></div></a>
+          <div class="tile" data-link="https://hometownwire.com">
+            <div class="shot" style="background-image:url('/assets/portfolio/hometownwire.jpg')"></div>
             <div class="body">
-              <div class="name"><a href="https://hometownwire.com" target="_blank" rel="noopener">HometownWire</a> <span class="badge flight">in&nbsp;flight</span></div>
+              <div class="name">HometownWire <span class="badge flight">in&nbsp;flight</span></div>
               <div class="one">Turning the public record into something you can actually search.</div>
-              <button class="case-btn" type="button">case study</button>
+              <div class="card-cue">case study</div>
               <div class="case-body" hidden>
                 <p><b>What it does</b> Council meetings, votes, and speaker-labeled transcripts, made searchable and readable.</p>
                 <p><b>The infrastructure flex</b> A React + Hono app on Cloudflare Workers over a civic corpus in D1.</p>
@@ -150,7 +150,7 @@
             <div class="body">
               <div class="name">Signal Feed <span class="badge deployed">deployed</span></div>
               <div class="one">The platform's live intelligence, as a scannable stream.</div>
-              <button class="case-btn" type="button">case study</button>
+              <div class="card-cue">case study</div>
               <div class="case-body" hidden>
                 <p><b>What it does</b> Public and private signals analyzed into a searchable card stream — entities, power flows, and events surfaced as they're found.</p>
                 <p><b>The infrastructure flex</b> Cards are scored, deduplicated, and assembled straight from the knowledge graph and warehouse — the human-facing end of the whole pipeline.</p>
@@ -163,7 +163,7 @@
             <div class="body">
               <div class="name">Scout <span class="badge deployed">deployed</span></div>
               <div class="one">The platform's business-profiling, shipped as its own SaaS.</div>
-              <button class="case-btn" type="button">case study</button>
+              <div class="card-cue">case study</div>
               <div class="case-body" hidden>
                 <p><b>What it does</b> A B2B sales-intelligence app — campaigns, leads, and outreach — on its own domain.</p>
                 <p><b>The infrastructure flex</b> Hono + React on Cloudflare Workers and D1.</p>
@@ -171,12 +171,12 @@
               </div>
             </div>
           </div>
-          <div class="tile">
-            <a href="/"><div class="shot" style="background-image:url('/assets/portfolio/portfoliopolis.jpg')"></div></a>
+          <div class="tile" data-link="/">
+            <div class="shot" style="background-image:url('/assets/portfolio/portfoliopolis.jpg')"></div>
             <div class="body">
-              <div class="name"><a href="/">Port Foliopolis</a> <span class="badge live">live</span></div>
+              <div class="name">Port Foliopolis <span class="badge live">live</span></div>
               <div class="one">A playable RPG where the NPCs are live LLMs.</div>
-              <button class="case-btn" type="button">case study</button>
+              <div class="card-cue">case study</div>
               <div class="case-body" hidden>
                 <p><b>What it does</b> Haggle with a business hog, reason your way past an ancient demilich — the dialogue is generated live.</p>
                 <p><b>The infrastructure flex</b> Phaser on Cloudflare Pages; the NPC brains run on free-tier models behind a Worker that <strong>holds the keys server-side, caps usage per visitor, and fails closed</strong>, so a toy can never run up a bill.</p>
@@ -184,11 +184,12 @@
               </div>
             </div>
           </div>
-          <div class="tile">
-            <a href="https://dreamtree.org" target="_blank" rel="noopener"><div class="shot ph">preview soon</div></a>
+          <div class="tile" data-link="https://dreamtree.org">
+            <div class="shot ph">preview soon</div>
             <div class="body">
-              <div class="name"><a href="https://dreamtree.org" target="_blank" rel="noopener">dreamtree</a> <span class="badge flight">in&nbsp;flight</span></div>
+              <div class="name">dreamtree <span class="badge flight">in&nbsp;flight</span></div>
               <div class="one">A data-sovereignty project.</div>
+              <div class="card-cue">visit</div>
             </div>
           </div>
         </div>
@@ -203,7 +204,7 @@
             <div class="body">
               <div class="name">Bamboo <span class="badge deployed">deployed</span></div>
               <div class="one">I didn't pick an agent framework. I built one.</div>
-              <button class="case-btn" type="button">case study</button>
+              <div class="card-cue">case study</div>
               <div class="case-body" hidden>
                 <p><b>What it does</b> The runtime under every agent above — the harness that gives them tools, memory, dispatch, and isolation.</p>
                 <p><b>The infrastructure flex</b> <strong>Every agent action flows through the message bus and is auditable</strong> — no agent calls another directly, so the whole system is logged and replayable. One config line swaps an agent between local inference and a frontier model; a new agent is a manifest plus a prompt, no runtime code.</p>
@@ -211,11 +212,11 @@
               </div>
             </div>
           </div>
-          <div class="tile concept">
+          <div class="tile concept" data-link="https://pypi.org/project/otter-docs/">
             <div class="body">
-              <div class="name"><a href="https://pypi.org/project/otter-docs/" target="_blank" rel="noopener">otter-docs</a> <span class="badge shipped">PyPI · MIT</span></div>
+              <div class="name">otter-docs <span class="badge shipped">PyPI · MIT</span></div>
               <div class="one">Open-source codebase intelligence for any language.</div>
-              <button class="case-btn" type="button">case study</button>
+              <div class="card-cue">case study</div>
               <div class="case-body" hidden>
                 <p><b>What it does</b> A polyglot code-intelligence library — tree-sitter ASTs, cross-file symbol resolution, and LLM-generated findings and diffs. Auto-docs and senior-dev-style review that run on any codebase, not just mine.</p>
                 <p><b>The infrastructure flex</b> MIT-licensed, published on PyPI, 354 tests.</p>
@@ -237,6 +238,7 @@
       <h3 class="case-title"></h3>
       <p class="case-sub"></p>
       <div class="case-content"></div>
+      <a class="case-visit" rel="noopener" style="display:none"></a>
     </div>
   </div>
 
@@ -246,25 +248,36 @@
     if (!modal) return;
     var tEl = modal.querySelector('.case-title'),
         sEl = modal.querySelector('.case-sub'),
-        cEl = modal.querySelector('.case-content');
-    function open(name, hook, html) {
+        cEl = modal.querySelector('.case-content'),
+        vEl = modal.querySelector('.case-visit');
+    function host(u) { return u.replace(/^https?:\/\//, '').replace(/\/$/, ''); }
+    function open(name, hook, html, link) {
       tEl.textContent = name; sEl.textContent = hook; cEl.innerHTML = html;
+      if (link) {
+        vEl.href = link;
+        vEl.textContent = (link === '/' ? '▶ Play the game' : 'Visit ' + host(link)) + ' →';
+        vEl.target = link.charAt(0) === '/' ? '_self' : '_blank';
+        vEl.style.display = 'inline-block';
+      } else { vEl.style.display = 'none'; }
       modal.classList.add('open'); document.body.style.overflow = 'hidden';
     }
     function close() { modal.classList.remove('open'); document.body.style.overflow = ''; }
-    document.querySelectorAll('.case-btn').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var body = btn.closest('.body');
-        var nameEl = body.querySelector('.name');
-        var link = nameEl.querySelector('a');
-        var name = (link ? link.textContent : nameEl.firstChild.textContent).trim();
-        var hookEl = body.querySelector('.one');
-        var caseEl = body.querySelector('.case-body');
-        open(name, hookEl ? hookEl.textContent.trim() : '', caseEl ? caseEl.innerHTML : '');
+    document.querySelectorAll('.tile').forEach(function (tile) {
+      tile.addEventListener('click', function () {
+        var caseEl = tile.querySelector('.case-body');
+        var link = tile.getAttribute('data-link') || '';
+        if (caseEl) {
+          var nameEl = tile.querySelector('.name');
+          var name = nameEl.firstChild.textContent.trim();
+          var hookEl = tile.querySelector('.one');
+          open(name, hookEl ? hookEl.textContent.trim() : '', caseEl.innerHTML, link);
+        } else if (link) {
+          if (link.charAt(0) === '/') location.href = link; else window.open(link, '_blank', 'noopener');
+        }
       });
     });
     modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
-    modal.querySelector('.case-x').addEventListener('click', close);
+    modal.querySelector('.case-x').addEventListener('click', function (e) { e.stopPropagation(); close(); });
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
   })();
   </script>

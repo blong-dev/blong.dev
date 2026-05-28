@@ -25,7 +25,7 @@
   function build() {
     root = el('div', `position:fixed;top:0;left:0;right:0;height:100%;z-index:50;display:none;align-items:flex-end;justify-content:center;
       background:rgba(20,24,20,0.35);font-family:monospace;`);
-    const panel = el('div', `width:min(620px,94vw);height:min(58vh,440px);margin-bottom:3vh;display:flex;flex-direction:column;
+    const panel = el('div', `width:min(620px,94vw);height:min(56vh,440px);max-height:calc(100% - 22px);margin-bottom:12px;display:flex;flex-direction:column;
       background:#f4f1e8;border:4px solid #202020;border-radius:8px;box-shadow:0 8px 0 rgba(0,0,0,0.28);overflow:hidden;`);
 
     const bar = el('div', `display:flex;align-items:center;gap:8px;padding:8px 10px;background:#202020;color:#fff;`);
@@ -40,8 +40,11 @@
       font-size:13px;line-height:1.45;color:#202020;`);
 
     const row = el('div', 'display:flex;gap:8px;padding:8px;border-top:3px solid #202020;background:#e8e4d8;');
-    inputEl = el('input', `flex:1;padding:8px;border:2px solid #202020;border-radius:4px;font-family:monospace;font-size:13px;`);
-    inputEl.placeholder = 'Say something…  (Esc to leave)';
+    inputEl = el('input', `flex:1;min-width:0;padding:9px;border:2px solid #202020;border-radius:4px;font-family:monospace;font-size:16px;`);
+    inputEl.placeholder = 'Say something…';   // 16px font avoids iOS zoom-on-focus
+    inputEl.setAttribute('enterkeyhint', 'send');
+    inputEl.setAttribute('autocomplete', 'off');
+    inputEl.setAttribute('autocapitalize', 'sentences');
     inputEl.addEventListener('keydown', (e) => {
       e.stopPropagation();
       if (e.key === 'Enter') submit();
@@ -96,7 +99,10 @@
     if (root.__fit) root.__fit();
     if (window.__padClear) window.__padClear();   // drop any held on-screen control so the hero stops while talking
     if (scene) { scene.input.keyboard.enabled = false; scene.scene.pause(); }   // world idles while talking
-    setTimeout(() => inputEl.focus(), 30);
+    // On touch, don't auto-pop the keyboard — let the player read first, then tap the
+    // field to type. On desktop (fine pointer), focus so they can type immediately.
+    const coarse = window.matchMedia && window.matchMedia('(pointer: coarse)').matches;
+    if (!coarse) setTimeout(() => inputEl.focus(), 30);
   }
 
   function close() {

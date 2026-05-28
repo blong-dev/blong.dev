@@ -1,17 +1,179 @@
 <!doctype html>
-<html>
+<html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Port Foliopolis — greybox</title>
+  <title>Braedon Long — blong.dev</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Braedon Long — enterprise architect & builder. Play Port Foliopolis, then see the work.">
   <style>
-    html,body{margin:0;height:100%;background:#202020;display:flex;align-items:center;justify-content:center;font-family:monospace;}
+    :root{
+      --obsidian:#14141b; --obsidian-2:#1c1c26; --line:#2d2d3a;
+      --parchment:#e9dfc6; --parchment-dim:#a9a18a; --gold:#e0b34e;
+    }
+    *{box-sizing:border-box;}
+    html{scroll-behavior:smooth;}
+    body{margin:0;background:var(--obsidian);color:var(--parchment);
+      font-family:Georgia,'Times New Roman',serif;line-height:1.6;}
+    a{color:var(--gold);text-decoration:none;}
+    a:hover{text-decoration:underline;}
+    h1,h2,h3,nav,.mono,.badge,.brand{font-family:'Courier New',monospace;}
+
+    /* nav */
+    nav{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-content:space-between;
+      padding:14px 22px;background:rgba(20,20,27,.92);backdrop-filter:blur(6px);border-bottom:1px solid var(--line);}
+    .brand{font-weight:bold;font-size:1.05rem;color:var(--parchment);letter-spacing:1px;}
+    .brand b{color:var(--gold);}
+    .nav-links a{color:var(--parchment);margin-left:26px;font-size:.95rem;letter-spacing:.5px;text-transform:uppercase;}
+    .nav-links a:hover{color:var(--gold);text-decoration:none;}
+
+    main{max-width:1040px;margin:0 auto;padding:0 22px;}
+    section{padding:54px 0;border-bottom:1px solid var(--line);}
+    section:last-of-type{border-bottom:none;}
+    h2{font-size:1.5rem;color:var(--gold);margin:0 0 6px;letter-spacing:2px;text-transform:uppercase;}
+    .section-sub{color:var(--parchment-dim);margin:0 0 28px;font-size:.95rem;}
+
+    /* hero / game */
+    .hero{text-align:center;padding-top:40px;}
+    .hero h1{font-size:1.7rem;margin:0 0 4px;color:var(--parchment);}
+    .hero .tag{color:var(--parchment-dim);margin:0 0 22px;font-family:'Courier New',monospace;font-size:.9rem;}
+    #game{width:min(94vw,880px);aspect-ratio:5/3;margin:0 auto;background:#202020;
+      border:1px solid var(--line);border-radius:4px;box-shadow:0 14px 40px rgba(0,0,0,.5);overflow:hidden;}
     #game canvas{image-rendering:pixelated;}
+    .controls{color:var(--parchment-dim);font-family:'Courier New',monospace;font-size:.82rem;margin-top:16px;}
+
+    /* github card */
+    .gh{display:flex;align-items:center;gap:16px;max-width:560px;margin:0 auto;
+      background:var(--obsidian-2);border:1px solid var(--line);border-radius:8px;padding:18px 22px;color:var(--parchment);}
+    .gh:hover{border-color:var(--gold);text-decoration:none;}
+    .gh svg{flex:none;fill:var(--parchment);}
+    .gh .repo{font-family:'Courier New',monospace;color:var(--gold);}
+    .gh .blurb{font-size:.9rem;color:var(--parchment-dim);}
+
+    /* portfolio tiles */
+    .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:20px;}
+    .tile{background:var(--obsidian-2);border:1px solid var(--line);border-radius:8px;overflow:hidden;
+      display:flex;flex-direction:column;transition:border-color .15s,transform .15s;}
+    .tile:hover{border-color:var(--gold);transform:translateY(-3px);text-decoration:none;}
+    .tile .shot{aspect-ratio:16/10;background:#0f0f15 center/cover no-repeat;border-bottom:1px solid var(--line);}
+    .tile .shot.ph{display:flex;align-items:center;justify-content:center;color:var(--parchment-dim);
+      font-family:'Courier New',monospace;font-size:.8rem;letter-spacing:1px;}
+    .tile .body{padding:14px 16px;}
+    .tile .name{font-family:'Courier New',monospace;font-size:1.05rem;color:var(--parchment);display:flex;align-items:center;gap:8px;}
+    .tile .name a{color:var(--parchment);}
+    .tile .name a:hover{color:var(--gold);}
+    .tile .one{color:var(--parchment-dim);font-size:.9rem;margin-top:5px;}
+    .badge{font-size:.62rem;letter-spacing:1px;text-transform:uppercase;padding:2px 7px;border-radius:99px;border:1px solid;}
+    .badge.live{color:#9ad9a0;border-color:#3c6b41;}
+    .badge.flight{color:var(--gold);border-color:#6b5524;}
+
+    /* about */
+    .about-grid{display:grid;grid-template-columns:200px 1fr;gap:30px;align-items:start;}
+    .about-grid img{width:200px;height:200px;object-fit:cover;border-radius:8px;border:1px solid var(--line);}
+    .about-grid p{margin:0 0 14px;}
+    .draft{color:var(--parchment-dim);font-size:.8rem;font-family:'Courier New',monospace;}
+
+    footer{text-align:center;padding:30px 22px 50px;color:var(--parchment-dim);font-family:'Courier New',monospace;font-size:.8rem;}
+    footer a{color:var(--parchment-dim);}
+
+    @media(max-width:620px){
+      .about-grid{grid-template-columns:1fr;}
+      .about-grid img{width:160px;height:160px;}
+      .nav-links a{margin-left:16px;font-size:.85rem;}
+    }
   </style>
   <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
 </head>
-<body>
-  <div id="game"></div>
+<body id="top">
+  <nav>
+    <a class="brand" href="#top">b<b>long</b>.dev</a>
+    <div class="nav-links">
+      <a href="#portfolio">Portfolio</a>
+      <a href="#demos">Demos</a>
+      <a href="#about">About</a>
+    </div>
+  </nav>
+
+  <main>
+    <section class="hero">
+      <h1>Port Foliopolis</h1>
+      <p class="tag">a portfolio you play — the townsfolk are live AI</p>
+      <div id="game"></div>
+      <p class="controls">← → move &nbsp;·&nbsp; space ×2 jump &nbsp;·&nbsp; A attack &nbsp;·&nbsp; S talk</p>
+    </section>
+
+    <section id="source">
+      <a class="gh" href="https://github.com/blong-dev/blong.dev" target="_blank" rel="noopener">
+        <svg width="34" height="34" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+        <div>
+          <div class="repo">blong-dev/blong.dev</div>
+          <div class="blurb">Port Foliopolis is open source — Phaser 3, free-tier LLM NPCs. Read the source.</div>
+        </div>
+      </a>
+    </section>
+
+    <section id="portfolio">
+      <h2>Portfolio</h2>
+      <p class="section-sub">What I'm building. Live ones link out; the rest are in flight.</p>
+      <div class="tiles">
+        <div class="tile">
+          <a href="https://telekora.com" target="_blank" rel="noopener"><div class="shot" style="background-image:url('assets/portfolio/telekora.jpg')"></div></a>
+          <div class="body"><div class="name"><a href="https://telekora.com" target="_blank" rel="noopener">Telekora</a> <span class="badge live">live</span></div>
+            <div class="one">B2B learning platform — tools, not cards.</div></div>
+        </div>
+        <div class="tile">
+          <a href="https://opsforshops.com" target="_blank" rel="noopener"><div class="shot" style="background-image:url('assets/portfolio/opsforshops.jpg')"></div></a>
+          <div class="body"><div class="name"><a href="https://opsforshops.com" target="_blank" rel="noopener">OpsForShops</a> <span class="badge live">live</span></div>
+            <div class="one">Ops &amp; technology for small business.</div></div>
+        </div>
+        <div class="tile">
+          <a href="https://hometownwire.com" target="_blank" rel="noopener"><div class="shot" style="background-image:url('assets/portfolio/hometownwire.jpg')"></div></a>
+          <div class="body"><div class="name"><a href="https://hometownwire.com" target="_blank" rel="noopener">HometownWire</a> <span class="badge flight">in&nbsp;flight</span></div>
+            <div class="one">Civic intelligence — local government, made legible.</div></div>
+        </div>
+        <div class="tile">
+          <a href="https://tailatlas.com" target="_blank" rel="noopener"><div class="shot" style="background-image:url('assets/portfolio/tailatlas.jpg')"></div></a>
+          <div class="body"><div class="name"><a href="https://tailatlas.com" target="_blank" rel="noopener">Tail Atlas</a> <span class="badge live">live</span></div>
+            <div class="one">Global GA fleet intelligence.</div></div>
+        </div>
+        <div class="tile">
+          <div class="shot ph">preview soon</div>
+          <div class="body"><div class="name">DreamTree <span class="badge flight">in&nbsp;flight</span></div>
+            <div class="one">User-owned, data-sovereign wallet.</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="demos">
+      <h2>Demos</h2>
+      <p class="section-sub">Public, no-login windows into the real systems.</p>
+      <div class="tiles">
+        <div class="tile">
+          <div class="shot" style="background-image:url('assets/portfolio/powergraph.jpg')"></div>
+          <div class="body"><div class="name">World Power Graph <span class="badge flight">soon</span></div>
+            <div class="one">Explore the knowledge graph behind the stack — all public data.</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="about">
+      <h2>About</h2>
+      <div class="about-grid">
+        <img src="assets/portfolio/braedon.jpg" alt="Braedon Long">
+        <div>
+          <p>I'm Braedon Long — an enterprise architect who came up through data: analytics, engineering, architecture. For years I made the software and vendor calls for mid-to-large companies. Now I build my own.</p>
+          <p>The work above is what I'm shipping; Port Foliopolis up top is that same stack, having fun. What I care about most is lifting the weight of technology off small businesses — local heroes getting squeezed by giants who can afford armies of engineers. I want to be that for the people who can't.</p>
+          <p>If you're building something real — or you're a shop owner drowning in tools — reach out.</p>
+          <p class="draft">[draft copy — refine in your own voice]</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    © <span id="yr"></span> Braedon Long · <a href="https://gnosis.blong.dev">operator</a>
+  </footer>
+
+  <script>document.getElementById('yr').textContent = new Date().getFullYear();</script>
   <script src="sprites.js"></script>
   <script src="chat.js"></script>
   <script src="game.js"></script>

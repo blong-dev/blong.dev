@@ -741,6 +741,7 @@ class ExploreScene extends Phaser.Scene {
     }
 
     this.cursors = this.input.keyboard.createCursorKeys();
+    this.input.keyboard.addCapture('UP,DOWN,LEFT,RIGHT,SPACE');   // keep game keys from scrolling the embedding page
     this.keySpace = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     this.keyA = this.input.keyboard.addKey('A');   // attack
     this.keyS = this.input.keyboard.addKey('S');   // speak / take Emma's shield

@@ -621,17 +621,6 @@ class ExploreScene extends Phaser.Scene {
     this.cameras.main.setBounds(0, -1200, WORLD_W, 2400);  // tall headroom — the lair is an open chamber for Emma to fly + swoop
     this.cameras.main.setBackgroundColor(PAL.sky);
 
-    // biome ranges (drive the labels + the parallax-bg swapping)
-    this.BIOMES = [
-      [0,    2400, 'meadow',   'MEADOW · TOWN'],
-      [2400, 4800, 'delta',    'DELTA'],
-      [4800, 7200, 'woods',    'WOODS'],
-      [7200, 8800, 'mountain', 'MOUNTAIN'],
-      [8800, 9600, 'lair',     'LAIR'],
-    ];
-    this.BIOMES.forEach(([x1, x2, key, label]) =>
-      this.add.text((x1 + x2) / 2, 150, label, { fontFamily:'monospace', fontSize:'20px', color:'#ffffff' })
-        .setOrigin(0.5).setStroke('#202020', 5).setDepth(-1));
     // Background — the tiling Pixel-Adventure blue backdrop, STATIC (pinned to the screen, doesn't move with the world).
     this.add.tileSprite(0, 0, W, H, 'bg_blue').setOrigin(0).setScrollFactor(0).setDepth(-100);
     // LAIR — its own dark cave backdrop, world-anchored. Starts exactly at the gold floor (x8800), so the

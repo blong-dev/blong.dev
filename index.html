@@ -25,6 +25,8 @@
     .brand b{color:var(--gold);}
     .nav-links a{color:var(--parchment);margin-left:26px;font-size:.95rem;letter-spacing:.5px;text-transform:uppercase;}
     .nav-links a:hover{color:var(--gold);text-decoration:none;}
+    .nav-links a.signin{border:1px solid var(--gold);color:var(--gold);padding:4px 13px;border-radius:99px;font-size:.82rem;}
+    .nav-links a.signin:hover{background:var(--gold);color:var(--obsidian);text-decoration:none;}
 
     main{max-width:1040px;margin:0 auto;padding:0 22px;}
     section{padding:54px 0;border-bottom:1px solid var(--line);}
@@ -90,6 +92,7 @@
       <a href="#portfolio">Portfolio</a>
       <a href="#demos">Demos</a>
       <a href="#about">About</a>
+      <a href="https://gnosis.blong.dev" class="signin">Sign In</a>
     </div>
   </nav>
 
@@ -136,9 +139,9 @@
             <div class="one">Global GA fleet intelligence.</div></div>
         </div>
         <div class="tile">
-          <div class="shot ph">preview soon</div>
-          <div class="body"><div class="name">DreamTree <span class="badge flight">in&nbsp;flight</span></div>
-            <div class="one">User-owned, data-sovereign wallet.</div></div>
+          <a href="https://dreamtree.org" target="_blank" rel="noopener"><div class="shot ph">preview soon</div></a>
+          <div class="body"><div class="name"><a href="https://dreamtree.org" target="_blank" rel="noopener">DreamTree</a> <span class="badge flight">in&nbsp;flight</span></div>
+            <div class="one">A workbook for career transitions — clarity, for everyone.</div></div>
         </div>
       </div>
     </section>
@@ -170,7 +173,7 @@
   </main>
 
   <footer>
-    © <span id="yr"></span> Braedon Long · <a href="https://gnosis.blong.dev">operator</a>
+    © <span id="yr"></span> Braedon Long
   </footer>
 
   <script>document.getElementById('yr').textContent = new Date().getFullYear();</script>

@@ -116,7 +116,13 @@
       });
 
       // start with a seed: the top ~45 by degree; expand reveals neighbors from the snapshot
-      var visible = new Set([].concat(data.nodes).sort(function (a, b) { return b.d - a.d; }).slice(0, 45).map(function (n) { return n.id; }));
+      // seed = the densely-interconnected core: a big top-by-degree pool, keep only
+      // nodes with >=2 edges to other seed nodes (lone pendants get revealed on expand).
+      var topIds = new Set([].concat(data.nodes).sort(function (a, b) { return b.d - a.d; }).slice(0, 240).map(function (n) { return n.id; }));
+      var inDeg = {};
+      data.links.forEach(function (l) { if (topIds.has(l.s) && topIds.has(l.t)) { inDeg[l.s] = (inDeg[l.s] || 0) + 1; inDeg[l.t] = (inDeg[l.t] || 0) + 1; } });
+      var visible = new Set();
+      topIds.forEach(function (id) { if ((inDeg[id] || 0) >= 2) visible.add(id); });
       var expanded = new Set();
 
       var selectedId = null, hoveredId = null, hoverNb = null;

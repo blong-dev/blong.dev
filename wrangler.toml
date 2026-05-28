@@ -1,0 +1,21 @@
+# Cloudflare Pages config for blong.dev (Port Foliopolis).
+# Static site served from the repo root; /api/chat handled by functions/api/chat.js.
+name = "blong-dev"
+compatibility_date = "2025-05-01"
+pages_build_output_dir = "."
+
+# KV — backs the chat daily caps (per-IP + global) and the fail-closed kill switch.
+# Create it once:   wrangler kv namespace create CHAT_KV
+# then paste the id below (use the same for preview, or make a second namespace).
+[[kv_namespaces]]
+binding = "CHAT_KV"
+id = "REPLACE_WITH_KV_NAMESPACE_ID"
+
+# Secrets are NOT committed here — set them on the Pages project:
+#   wrangler pages secret put GEMINI_API_KEY      (free-tier key, NO billing attached)
+#   wrangler pages secret put GROQ_API_KEY        (free-tier key, NO billing attached)
+# Optional hardening var (Pages dashboard → Settings → Environment variables):
+#   AI_GATEWAY_BASE = https://gateway.ai.cloudflare.com/v1/<account_id>/<gateway_name>
+#
+# Kill switch (emergency): set a KV value to deny all chat instantly —
+#   wrangler kv key put --binding CHAT_KV kill 1     (delete the key to re-enable)

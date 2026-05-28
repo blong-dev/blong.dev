@@ -9,7 +9,7 @@ pages_build_output_dir = "."
 # then paste the id below (use the same for preview, or make a second namespace).
 [[kv_namespaces]]
 binding = "CHAT_KV"
-id = "REPLACE_WITH_KV_NAMESPACE_ID"
+id = "4484e3c65ba14b28b4c3076380cee516"
 
 # Secrets are NOT committed here — set them on the Pages project:
 #   wrangler pages secret put GEMINI_API_KEY      (free-tier key, NO billing attached)

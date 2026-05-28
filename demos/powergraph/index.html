@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="/site.css">
   <script src="/site.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/force-graph@1"></script>
+  <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
   <style>
     body{overflow:hidden;}
     #pg-wrap{position:relative;height:calc(100vh - 57px);width:100%;background:var(--obsidian);}
@@ -98,7 +99,7 @@
       var minD = pos.length ? Math.min.apply(null, pos) : 0;
       data.nodes.forEach(function (n) {
         var norm = maxD > minD ? ((n.d || 0) - minD) / (maxD - minD) : 0.5;
-        n.__size = 2 + Math.sqrt(Math.max(0, norm)) * 18;
+        n.__size = 4 + Math.sqrt(Math.max(0, norm)) * 22;
       });
 
       // legend (types present)
@@ -182,8 +183,10 @@
           }
         });
 
-      Graph.d3Force('charge').strength(-30);
-      Graph.d3Force('link').distance(40);
+      Graph.d3Force('charge').strength(-120);
+      Graph.d3Force('link').distance(70);
+      // collision (from the full d3 bundle, which includes quadtree) so bigger nodes never overlap
+      if (window.d3 && d3.forceCollide) Graph.d3Force('collide', d3.forceCollide(function (n) { return (n.__size || 6) + 6; }).iterations(2));
 
       var fitDone = false;
       Graph.onEngineStop(function () { if (!fitDone) { Graph.zoomToFit(500, 60); fitDone = true; } });

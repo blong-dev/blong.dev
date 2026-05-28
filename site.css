@@ -27,6 +27,8 @@ nav{position:sticky;top:0;z-index:50;display:flex;align-items:center;justify-con
 .nav-links a.gh-link{display:inline-flex;align-items:center;padding:0;}
 .nav-links a.gh-link svg{fill:var(--parchment);display:block;}
 .nav-links a.gh-link:hover svg{fill:var(--gold);}
+.nav-toggle{display:none;background:none;border:none;color:var(--parchment);font-size:1.5rem;line-height:1;cursor:pointer;padding:0 2px;font-family:inherit;}
+.nav-toggle:hover{color:var(--gold);}
 
 main{flex:1;width:100%;max-width:1040px;margin:0 auto;padding:0 22px;}
 section{padding:54px 0;border-bottom:1px solid var(--line);}
@@ -202,10 +204,24 @@ footer a{color:var(--parchment-dim);}
   main{padding:0 16px;}
 }
 @media(max-width:480px){
-  nav{padding:11px 13px;}
-  .brand{font-size:.92rem;letter-spacing:0;}
-  .nav-links a{margin-left:12px;font-size:.72rem;letter-spacing:0;}
-  .nav-links a.signin{margin-left:12px;padding:3px 9px;font-size:.68rem;}
+  nav{padding:11px 14px;}
+  .brand{font-size:.95rem;letter-spacing:0;}
+}
+
+/* mobile: collapse the nav into a hamburger menu */
+@media(max-width:620px){
+  .nav-toggle{display:block;}
+  .nav-links{
+    display:none;position:absolute;top:100%;left:0;right:0;
+    flex-direction:column;align-items:stretch;
+    background:rgba(20,20,27,.98);border-bottom:1px solid var(--line);
+    padding:4px 0;box-shadow:0 14px 30px rgba(0,0,0,.55);
+  }
+  nav.open .nav-links{display:flex;}
+  .nav-links a{margin:0;padding:13px 22px;font-size:.95rem;letter-spacing:1px;border-top:1px solid var(--line);text-transform:uppercase;}
+  .nav-links a:first-child{border-top:none;}
+  .nav-links a.gh-link{padding:13px 22px;}
+  .nav-links a.signin{margin:10px 22px;padding:9px 0;text-align:center;}
 }
 
 /* ===== Desktop / mouse: drop the handheld — play the game big with the keyboard. =====

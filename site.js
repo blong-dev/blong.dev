@@ -15,8 +15,19 @@
       links.map(l => `<a href="${l.href}"${(path === l.href || path.startsWith(l.href + '/')) ? ' class="active"' : ''}>${l.label}</a>`).join('') +
       '<a class="gh-link" href="https://github.com/blong-dev" target="_blank" rel="noopener" aria-label="GitHub">' + ghIcon + '</a>' +
       '<a href="https://gnosis.blong.dev" class="signin">Sign In</a>' +
-    '</div>';
+    '</div>' +
+    '<button class="nav-toggle" type="button" aria-label="Menu" aria-expanded="false">☰</button>';
   document.body.insertBefore(nav, document.body.firstChild);
+
+  const navToggle = nav.querySelector('.nav-toggle');
+  navToggle.addEventListener('click', function () {
+    const open = nav.classList.toggle('open');
+    navToggle.innerHTML = open ? '✕' : '☰';
+    navToggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  });
+  nav.querySelectorAll('.nav-links a').forEach(function (a) {
+    a.addEventListener('click', function () { nav.classList.remove('open'); navToggle.innerHTML = '☰'; navToggle.setAttribute('aria-expanded', 'false'); });
+  });
 
   const footer = document.createElement('footer');
   footer.innerHTML = '© ' + new Date().getFullYear() + ' Braedon Long';

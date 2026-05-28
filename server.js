@@ -104,6 +104,8 @@ http.createServer((req, res) => {
   }
   let p = decodeURIComponent(req.url.split('?')[0]);
   if (p === '/') p = '/index.html';
+  // Directory-index parity with Cloudflare Pages: /portfolio -> /portfolio/index.html
+  else if (!path.extname(p)) p = p.replace(/\/$/, '') + '/index.html';
   const fp = path.join(ROOT, path.normalize(p));
   if (!fp.startsWith(ROOT)) { res.writeHead(403); return res.end('forbidden'); }
   fs.readFile(fp, (err, data) => {

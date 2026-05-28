@@ -23,7 +23,7 @@
   const el = (tag, css, txt) => { const e = document.createElement(tag); if (css) e.style.cssText = css; if (txt != null) e.textContent = txt; return e; };
 
   function build() {
-    root = el('div', `position:fixed;inset:0;z-index:50;display:none;align-items:flex-end;justify-content:center;
+    root = el('div', `position:fixed;top:0;left:0;right:0;height:100%;z-index:50;display:none;align-items:flex-end;justify-content:center;
       background:rgba(20,24,20,0.35);font-family:monospace;`);
     const panel = el('div', `width:min(620px,94vw);height:min(58vh,440px);margin-bottom:3vh;display:flex;flex-direction:column;
       background:#f4f1e8;border:4px solid #202020;border-radius:8px;box-shadow:0 8px 0 rgba(0,0,0,0.28);overflow:hidden;`);
@@ -56,6 +56,15 @@
     root.append(panel);
     root.addEventListener('mousedown', (e) => { if (e.target === root) close(); });
     document.body.append(root);
+
+    // Mobile soft keyboard: shrink the overlay to the visible viewport so the
+    // bottom-aligned panel + input stay above the keyboard instead of hiding under it.
+    if (window.visualViewport) {
+      const fit = () => { if (root.style.display === 'flex') root.style.height = window.visualViewport.height + 'px'; };
+      window.visualViewport.addEventListener('resize', fit);
+      window.visualViewport.addEventListener('scroll', fit);
+      root.__fit = fit;
+    }
   }
 
   function bubble(side, text, accent) {
@@ -84,6 +93,8 @@
     }
     sessions[npc].forEach(m => bubble(m.role === 'you' ? 'you' : 'npc', m.text, cfg.accent));
     root.style.display = 'flex';
+    if (root.__fit) root.__fit();
+    if (window.__padClear) window.__padClear();   // drop any held on-screen control so the hero stops while talking
     if (scene) { scene.input.keyboard.enabled = false; scene.scene.pause(); }   // world idles while talking
     setTimeout(() => inputEl.focus(), 30);
   }
@@ -91,6 +102,7 @@
   function close() {
     if (!root) return;
     root.style.display = 'none';
+    root.style.height = '100%';   // restore full height after the keyboard-fit shrink
     if (npc === 'roq' || npc === 'emma') bossLog.push({ who: NPCS[npc].name, lines: sessions[npc].slice() });
     const grant = scene && scene.grantEmmaShield && (pendingShield || (npc === 'emma' && llmDown));   // shield drops on agreement, or as a fallback when the LLM is down
     const payout = scene && scene.payBounty && (pendingBounty || (npc === 'roq' && scene.bossDead && scene.bossDead.emma));

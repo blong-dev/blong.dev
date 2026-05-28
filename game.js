@@ -2,6 +2,28 @@
 // Bright-NES placeholder palette; shapes stand in for sprites.
 const W = 800, H = 480;
 
+// ---- On-screen Gameboy controls: one shared pad state, bound to the DOM buttons once. ----
+// Keyboard still drives the game directly; these flags are OR'd in alongside it.
+// left/right are HELD (true while pressed); jump/attack/talk are EDGE (consumed once via padHit).
+const PAD = { left:false, right:false, jump:false, attack:false, talk:false };
+const HELD = { left:true, right:true };
+const padHit = k => { if(PAD[k]){ PAD[k] = false; return true; } return false; };
+function padClear(){ PAD.left = PAD.right = PAD.jump = PAD.attack = PAD.talk = false; }
+window.__padClear = padClear;   // chat.js clears the pad when a conversation opens
+function bindPad(){
+  document.querySelectorAll('[data-pad]').forEach(btn => {
+    const k = btn.dataset.pad;
+    const down = e => { if(e.cancelable) e.preventDefault(); btn.classList.add('pressed'); PAD[k] = true; };
+    const up   = e => { if(e && e.cancelable) e.preventDefault(); btn.classList.remove('pressed'); if(HELD[k]) PAD[k] = false; };
+    btn.addEventListener('pointerdown', down);
+    btn.addEventListener('pointerup', up);
+    btn.addEventListener('pointerleave', up);
+    btn.addEventListener('pointercancel', up);
+    btn.addEventListener('contextmenu', e => e.preventDefault());   // no long-press menu on mobile
+  });
+}
+if(document.readyState !== 'loading') bindPad(); else document.addEventListener('DOMContentLoaded', bindPad);
+
 const PAL = {
   sky:   0x5c94fc,  // SMB sky blue
   grass: 0x00a800,
@@ -744,6 +766,7 @@ class ExploreScene extends Phaser.Scene {
     this.input.keyboard.addCapture('UP,DOWN,LEFT,RIGHT,SPACE');   // keep game keys from scrolling the embedding page
     this.keySpace = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
     this.keyA = this.input.keyboard.addKey('A');   // attack
+    this.keyJ = this.input.keyboard.addKey('J');   // jump (matches the on-screen J button)
     this.keyS = this.input.keyboard.addKey('S');   // speak / take Emma's shield
     if(window.PortChat) window.PortChat.reset();   // clean-slate NPC chats each playthrough (death = fresh start)
 
@@ -982,8 +1005,8 @@ class ExploreScene extends Phaser.Scene {
   update(time, delta){
     this.sea.tilePositionX += 0.15;            // gentle current on the delta water
     const b = this.player.body, SPEED = 200, JUMP = 480;
-    const L = this.cursors.left.isDown, R = this.cursors.right.isDown;
-    const jump = Phaser.Input.Keyboard.JustDown(this.keySpace);
+    const L = this.cursors.left.isDown || PAD.left, R = this.cursors.right.isDown || PAD.right;
+    const jump = Phaser.Input.Keyboard.JustDown(this.keySpace) || Phaser.Input.Keyboard.JustDown(this.keyJ) || padHit('jump');
     b.setAllowGravity(true);
 
     const onGround = b.blocked.down || b.touching.down;
@@ -1008,8 +1031,8 @@ class ExploreScene extends Phaser.Scene {
       if(sliding){ b.setVelocityX(wallDir * 280); b.setVelocityY(-JUMP); this.jumpsUsed = 1; this.facing = wallDir; }   // kick off the wall
       else if(this.jumpsUsed < 2){ b.setVelocityY(-JUMP); this.jumpsUsed++; if(this.jumpsUsed === 2) this.player.play(this.heroChar + '-djump'); }
     }
-    if(Phaser.Input.Keyboard.JustDown(this.keyA)) this.doAttack();
-    if(Phaser.Input.Keyboard.JustDown(this.keyS)){                 // talk to the nearest NPC you're facing
+    if(Phaser.Input.Keyboard.JustDown(this.keyA) || padHit('attack')) this.doAttack();
+    if(Phaser.Input.Keyboard.JustDown(this.keyS) || padHit('talk')){    // talk to the nearest NPC you're facing
       let best = null, bd = 240;
       const check = (k, n) => {
         if(!n || !n.active) return;

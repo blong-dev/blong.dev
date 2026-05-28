@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>World Power Graph — blong.dev</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="An interactive slice of a 22M-node public-data knowledge graph — money, lobbying, control, and contracts between real entities.">
+  <link rel="stylesheet" href="/site.css">
+  <script src="/site.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/force-graph@1"></script>
+  <style>
+    body{overflow:hidden;}
+    #pg-wrap{position:relative;height:calc(100vh - 57px);width:100%;background:var(--obsidian);}
+    #graph{position:absolute;inset:0;}
+    .pg-overlay{position:absolute;top:0;left:0;max-width:min(92vw,380px);padding:18px 20px;pointer-events:none;z-index:5;}
+    .pg-overlay h1{font-family:'Courier New',monospace;color:var(--gold);font-size:1.25rem;margin:0 0 6px;letter-spacing:1px;}
+    .pg-overlay p{color:var(--parchment-dim);font-size:.8rem;line-height:1.5;margin:0 0 12px;}
+    #pg-search{pointer-events:auto;width:100%;max-width:300px;padding:8px 11px;border:1px solid var(--line);
+      border-radius:6px;background:var(--obsidian-2);color:var(--parchment);font-family:'Courier New',monospace;font-size:14px;}
+    #pg-search::placeholder{color:var(--parchment-dim);}
+    .pg-legend{display:flex;flex-wrap:wrap;gap:6px 12px;margin-top:12px;}
+    .pg-legend span{display:flex;align-items:center;gap:5px;font-family:'Courier New',monospace;font-size:.66rem;color:var(--parchment-dim);text-transform:capitalize;}
+    .pg-legend i{width:9px;height:9px;border-radius:50%;display:block;}
+    #pg-panel{position:absolute;right:16px;bottom:16px;width:min(90vw,320px);max-height:60vh;overflow:auto;
+      background:rgba(28,28,38,.96);border:1px solid var(--gold);border-radius:9px;padding:16px 18px;z-index:6;
+      box-shadow:0 16px 40px rgba(0,0,0,.5);}
+    #pg-panel.hidden{display:none;}
+    #pg-panel .pn{font-family:'Courier New',monospace;color:var(--parchment);font-size:1.05rem;margin:0 24px 4px 0;word-break:break-word;}
+    #pg-panel .pt{font-family:'Courier New',monospace;font-size:.62rem;text-transform:uppercase;letter-spacing:1px;
+      border:1px solid;border-radius:99px;padding:1px 8px;display:inline-block;margin-bottom:10px;}
+    #pg-panel .pmeta{color:var(--parchment-dim);font-size:.8rem;line-height:1.55;}
+    #pg-panel .pmeta b{color:var(--parchment);font-weight:normal;}
+    #pg-panel .px{position:absolute;top:10px;right:10px;width:24px;height:24px;border:none;border-radius:5px;
+      background:#2a2a36;color:var(--parchment);cursor:pointer;font-family:'Courier New',monospace;font-size:15px;line-height:1;}
+    #pg-panel .px:hover{background:var(--red);color:#fff;}
+    .pg-loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+      color:var(--parchment-dim);font-family:'Courier New',monospace;font-size:.9rem;z-index:4;}
+    @media(max-width:560px){ .pg-overlay h1{font-size:1.05rem;} .pg-overlay p{display:none;} }
+  </style>
+</head>
+<body>
+  <div id="pg-wrap">
+    <div id="graph"></div>
+    <div class="pg-loading" id="pg-loading">loading the graph…</div>
+    <div class="pg-overlay">
+      <h1>World Power Graph</h1>
+      <p id="pg-cap">A live slice of a 22-million-node public-data knowledge graph — money, lobbying, control, contracts. Drag to explore · scroll to zoom · click a node.</p>
+      <input id="pg-search" type="search" placeholder="Search an entity…  (Enter)">
+      <div class="pg-legend" id="pg-legend"></div>
+    </div>
+    <div id="pg-panel" class="hidden"></div>
+  </div>
+
+  <script>
+  (function () {
+    var COLORS = { organization:'#6f9bd1', gov_body:'#6fb37a', person:'#e0b34e', institution:'#5bb1b0',
+                   fund:'#b18fd1', agency:'#e0764e', business:'#9a93a8', other:'#8a8a8a' };
+    var LABELS = { organization:'Organization', gov_body:'Gov body', person:'Person', institution:'Institution',
+                   fund:'Fund', agency:'Agency', business:'Business' };
+    var color = function (t) { return COLORS[t] || COLORS.other; };
+
+    fetch('/assets/powergraph.json').then(function (r) { return r.json(); }).then(function (data) {
+      document.getElementById('pg-loading').style.display = 'none';
+      document.getElementById('pg-cap').textContent =
+        data.nodes.length + ' of the most-connected entities from a 22-million-node public-data graph — money, lobbying, control, contracts. Drag to explore · scroll to zoom · click a node.';
+
+      // legend (only types present)
+      var present = {}; data.nodes.forEach(function (n) { present[n.t] = 1; });
+      var leg = document.getElementById('pg-legend');
+      Object.keys(LABELS).forEach(function (t) {
+        if (!present[t]) return;
+        var s = document.createElement('span');
+        s.innerHTML = '<i style="background:' + color(t) + '"></i>' + LABELS[t];
+        leg.appendChild(s);
+      });
+
+      // adjacency for the detail panel
+      var byId = {}; data.nodes.forEach(function (n) { byId[n.id] = n; });
+      var adj = {};
+      data.links.forEach(function (l) {
+        (adj[l.s] = adj[l.s] || []).push({ o: l.t, r: l.r });
+        (adj[l.t] = adj[l.t] || []).push({ o: l.s, r: l.r });
+      });
+      // label threshold: always-label roughly the top 28 by degree
+      var degs = data.nodes.map(function (n) { return n.d; }).sort(function (a, b) { return b - a; });
+      var THRESH = degs[Math.min(28, degs.length - 1)] || 0;
+
+      var selected = null, hovered = null;
+      var el = document.getElementById('graph');
+      var radius = function (n) { return Math.min(13, Math.max(1.6, Math.sqrt(n.d) * 0.55)); };
+
+      // force-graph (d3) wants links keyed source/target; our compact JSON uses s/t.
+      var fgData = { nodes: data.nodes, links: data.links.map(function (l) { return { source: l.s, target: l.t }; }) };
+      var Graph = ForceGraph()(el)
+        .graphData(fgData)
+        .backgroundColor('#14141b')
+        .nodeId('id')
+        .nodeLabel(function (n) { return n.n + '  ·  ' + (LABELS[n.t] || n.t); })
+        .linkColor(function () { return 'rgba(170,160,130,0.09)'; })
+        .linkWidth(0.4)
+        .linkDirectionalArrowLength(0)
+        .cooldownTicks(140)
+        .onNodeHover(function (n) { hovered = n; el.style.cursor = n ? 'pointer' : ''; })
+        .onNodeClick(function (n) { selected = n; showPanel(n); Graph.centerAt(n.x, n.y, 500); })
+        .onBackgroundClick(function () { selected = null; hidePanel(); })
+        .nodeCanvasObject(function (node, ctx, scale) {
+          var r = radius(node);
+          ctx.beginPath(); ctx.arc(node.x, node.y, r, 0, 2 * Math.PI);
+          ctx.fillStyle = (node === selected) ? '#ffffff' : color(node.t);
+          ctx.fill();
+          if (node === selected) { ctx.lineWidth = 2 / scale; ctx.strokeStyle = '#e0b34e'; ctx.stroke(); }
+          if ((node.d >= THRESH || node === selected || node === hovered) && scale > 0.55) {
+            var fs = Math.min(5.5, 11 / scale);
+            ctx.font = fs + "px 'Courier New', monospace";
+            ctx.fillStyle = (node === selected) ? '#ffffff' : '#cabf9f';
+            ctx.fillText(node.n.length > 34 ? node.n.slice(0, 33) + '…' : node.n, node.x + r + 1.5, node.y + fs / 3);
+          }
+        })
+        .nodePointerAreaPaint(function (node, c, ctx) {
+          ctx.fillStyle = c; ctx.beginPath(); ctx.arc(node.x, node.y, radius(node) + 2.5, 0, 2 * Math.PI); ctx.fill();
+        });
+
+      Graph.onEngineStop(function () { Graph.zoomToFit(500, 50); Graph.onEngineStop(function () {}); });
+
+      function showPanel(n) {
+        var nb = adj[n.id] || [];
+        var byRel = {}; nb.forEach(function (e) { byRel[e.r] = (byRel[e.r] || 0) + 1; });
+        var relStr = Object.keys(byRel).sort(function (a, b) { return byRel[b] - byRel[a]; })
+          .map(function (k) { return k.replace(/_/g, ' ').toLowerCase() + ' ' + byRel[k]; }).join(' · ');
+        var top = nb.map(function (e) { return byId[e.o]; }).filter(Boolean)
+          .sort(function (a, b) { return b.d - a.d; }).slice(0, 6)
+          .map(function (x) { return x.n; });
+        var uniqTop = top.filter(function (v, i) { return top.indexOf(v) === i; }).slice(0, 5);
+        var p = document.getElementById('pg-panel');
+        p.className = '';
+        p.innerHTML =
+          '<button class="px" aria-label="close">×</button>' +
+          '<div class="pn">' + esc(n.n) + '</div>' +
+          '<div class="pt" style="color:' + color(n.t) + ';border-color:' + color(n.t) + '">' + (LABELS[n.t] || n.t) + '</div>' +
+          '<div class="pmeta"><b>' + nb.length + '</b> connections' +
+            (relStr ? '<br>' + esc(relStr) : '') +
+            (uniqTop.length ? '<br><br>linked to: ' + esc(uniqTop.join(', ')) : '') + '</div>';
+        p.querySelector('.px').onclick = function () { selected = null; hidePanel(); };
+      }
+      function hidePanel() { var p = document.getElementById('pg-panel'); p.className = 'hidden'; }
+      function esc(s) { return (s + '').replace(/[&<>]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]; }); }
+
+      var search = document.getElementById('pg-search');
+      function doSearch() {
+        var q = search.value.trim().toLowerCase();
+        if (q.length < 2) return;
+        var hit = data.nodes.find(function (n) { return n.n.toLowerCase().indexOf(q) >= 0; });
+        if (hit) { selected = hit; showPanel(hit); Graph.centerAt(hit.x, hit.y, 600); Graph.zoom(2.2, 600); }
+      }
+      search.addEventListener('keydown', function (e) { if (e.key === 'Enter') doSearch(); });
+
+      addEventListener('resize', function () { Graph.width(el.clientWidth).height(el.clientHeight); });
+    }).catch(function () {
+      document.getElementById('pg-loading').textContent = 'could not load the graph.';
+    });
+  })();
+  </script>
+</body>
+</html>

@@ -11,7 +11,7 @@
   nav.innerHTML =
     '<a class="brand" href="/">b<b>long</b>.dev</a>' +
     '<div class="nav-links">' +
-      links.map(l => `<a href="${l.href}"${path === l.href ? ' class="active"' : ''}>${l.label}</a>`).join('') +
+      links.map(l => `<a href="${l.href}"${(path === l.href || path.startsWith(l.href + '/')) ? ' class="active"' : ''}>${l.label}</a>`).join('') +
       '<a class="gh-link" href="https://github.com/blong-dev" target="_blank" rel="noopener" aria-label="GitHub">' + ghIcon + '</a>' +
       '<a href="https://gnosis.blong.dev" class="signin">Sign In</a>' +
     '</div>';

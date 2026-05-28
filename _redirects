@@ -1,0 +1,4 @@
+# Internal docs were briefly public — hard-block their paths at the edge.
+# (They're also gitignored + excluded from deploys; this stops any cached/re-cached copy.)
+/portfolio.md    /    301
+/dossiers/*      /    301

@@ -11,16 +11,42 @@ const padHit = k => { if(PAD[k]){ PAD[k] = false; return true; } return false; }
 function padClear(){ PAD.left = PAD.right = PAD.jump = PAD.attack = PAD.talk = false; }
 window.__padClear = padClear;   // chat.js clears the pad when a conversation opens
 function bindPad(){
+  // Face buttons (J/A/S) — discrete edge taps.
   document.querySelectorAll('[data-pad]').forEach(btn => {
     const k = btn.dataset.pad;
+    if(HELD[k]) return;                       // left/right are handled as one slide region below
     const down = e => { if(e.cancelable) e.preventDefault(); btn.classList.add('pressed'); PAD[k] = true; };
-    const up   = e => { if(e && e.cancelable) e.preventDefault(); btn.classList.remove('pressed'); if(HELD[k]) PAD[k] = false; };
+    const up   = e => { if(e && e.cancelable) e.preventDefault(); btn.classList.remove('pressed'); };
     btn.addEventListener('pointerdown', down);
     btn.addEventListener('pointerup', up);
-    btn.addEventListener('pointerleave', up);
     btn.addEventListener('pointercancel', up);
     btn.addEventListener('contextmenu', e => e.preventDefault());   // no long-press menu on mobile
   });
+  // D-pad — one slide region: direction comes from finger POSITION, so dragging
+  // across it switches left<->right without lifting (implicit pointer capture would
+  // otherwise pin every move to whichever button you first touched).
+  const pad = document.querySelector('.gb-dpad');
+  if(pad){
+    const dl = pad.querySelector('.d-left'), dr = pad.querySelector('.d-right');
+    let active = false;
+    const apply = e => {
+      const r = pad.getBoundingClientRect();
+      const dx = e.clientX - (r.left + r.width / 2);
+      const dz = r.width * 0.16;               // dead zone over the center (up/down) column
+      const L = dx <= -dz, R = dx >= dz;
+      PAD.left = L; PAD.right = R;
+      dl.classList.toggle('pressed', L); dr.classList.toggle('pressed', R);
+    };
+    const end = e => { active = false; PAD.left = PAD.right = false;
+      dl.classList.remove('pressed'); dr.classList.remove('pressed');
+      try { if(e) pad.releasePointerCapture(e.pointerId); } catch(_){} };
+    pad.addEventListener('pointerdown', e => { if(e.cancelable) e.preventDefault();
+      active = true; try { pad.setPointerCapture(e.pointerId); } catch(_){} apply(e); });
+    pad.addEventListener('pointermove', e => { if(active) apply(e); });
+    pad.addEventListener('pointerup', end);
+    pad.addEventListener('pointercancel', end);
+    pad.addEventListener('contextmenu', e => e.preventDefault());
+  }
 }
 if(document.readyState !== 'loading') bindPad(); else document.addEventListener('DOMContentLoaded', bindPad);
 

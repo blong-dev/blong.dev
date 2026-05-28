@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>Portfolio — blong.dev</title>
+  <title>Portfolio — Braedon Long</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="What Braedon Long is building — Telekora, OpsForShops, HometownWire, Tail Atlas, dreamtree.">
+  <meta name="description" content="A private AI platform, the autonomous workforce that runs it, and the apps shipped on top — built and operated solo.">
   <link rel="stylesheet" href="/site.css">
   <script src="/site.js" defer></script>
 </head>
@@ -13,35 +13,166 @@
     <section>
       <div class="page-head">
         <h2>Portfolio</h2>
-        <p class="section-sub">What I'm building. Live ones link out; the rest are in flight.</p>
+        <p class="section-sub">A private AI platform, the autonomous workforce that operates it, and the apps shipped on top — built and run solo. Expand any tile for the case study.</p>
       </div>
-      <div class="tiles">
-        <div class="tile">
-          <a href="https://telekora.com" target="_blank" rel="noopener"><div class="shot" style="background-image:url('/assets/portfolio/telekora.jpg')"></div></a>
-          <div class="body"><div class="name"><a href="https://telekora.com" target="_blank" rel="noopener">Telekora</a> <span class="badge live">live</span></div>
-            <div class="one">B2B learning platform — tools, not cards.</div></div>
-        </div>
-        <div class="tile">
-          <a href="https://opsforshops.com" target="_blank" rel="noopener"><div class="shot" style="background-image:url('/assets/portfolio/opsforshops.jpg')"></div></a>
-          <div class="body"><div class="name"><a href="https://opsforshops.com" target="_blank" rel="noopener">OpsForShops</a> <span class="badge live">live</span></div>
-            <div class="one">Ops &amp; technology for small business.</div></div>
-        </div>
-        <div class="tile">
-          <a href="https://hometownwire.com" target="_blank" rel="noopener"><div class="shot" style="background-image:url('/assets/portfolio/hometownwire.jpg')"></div></a>
-          <div class="body"><div class="name"><a href="https://hometownwire.com" target="_blank" rel="noopener">HometownWire</a> <span class="badge flight">in&nbsp;flight</span></div>
-            <div class="one">Civic intelligence — local government, made legible.</div></div>
-        </div>
-        <div class="tile">
-          <a href="https://tailatlas.com" target="_blank" rel="noopener"><div class="shot" style="background-image:url('/assets/portfolio/tailatlas.jpg')"></div></a>
-          <div class="body"><div class="name"><a href="https://tailatlas.com" target="_blank" rel="noopener">Tail Atlas</a> <span class="badge live">live</span></div>
-            <div class="one">Global GA fleet intelligence.</div></div>
-        </div>
-        <div class="tile">
-          <a href="https://dreamtree.org" target="_blank" rel="noopener"><div class="shot ph">preview soon</div></a>
-          <div class="body"><div class="name"><a href="https://dreamtree.org" target="_blank" rel="noopener">dreamtree</a> <span class="badge flight">in&nbsp;flight</span></div>
-            <div class="one">A workbook for career transitions — clarity, for everyone.</div></div>
+
+      <!-- ===== Band 1 — Platform ===== -->
+      <div class="band">
+        <div class="band-head">Platform</div>
+        <p class="band-sub">The foundation everything else on this page runs on.</p>
+        <div class="tiles">
+          <div class="tile concept">
+            <div class="body">
+              <div class="name">Gnosis <span class="badge deployed">deployed</span></div>
+              <div class="one">The private, event-driven AI platform behind everything else here.</div>
+              <details class="case"><summary>case study</summary>
+                <p>Public and private data flows through an ingestion layer into a knowledge graph and a time-series warehouse, where an autonomous agent layer reasons over it and ships results to a live dashboard. Go services move work across a message bus where <strong>every agent action is an auditable event</strong> — no agent calls another directly. Postgres, Neo4j, Elasticsearch, and Redis sit behind it, held together by ~2,200 automated tests. It runs on <strong>two consumer desktops over a 10&nbsp;GbE link</strong> — most of the intelligence is local, so there's no per-token bill for the volume work. I set direction; the platform runs the loop.</p>
+              </details>
+            </div>
+          </div>
         </div>
       </div>
+
+      <!-- ===== Band 2 — The workforce ===== -->
+      <div class="band">
+        <div class="band-head">The workforce</div>
+        <p class="band-sub">A named team, not a pile of scripts — one custom, bus-native harness running persistent, ephemeral, and non-LLM agents. Every action is a logged, replayable event.</p>
+        <div class="tiles">
+          <div class="tile concept">
+            <div class="body">
+              <div class="name">Cosmo</div>
+              <div class="one">The agent that runs the other agents.</div>
+              <div class="role">Chief of staff · <b>frontier (Claude)</b></div>
+              <details class="case"><summary>case study</summary>
+                <p>A persistent agent that manages my attention the way a chief of staff manages an executive's: it triages what reaches me, delegates to specialist agents, and keeps a running memory of decisions and procedures so context survives across days. ~38 tools (filesystem, the knowledge graph, memory, task + kanban management); runs on a frontier model because this is the judgment seat. Everything it does is a logged bus event.</p>
+              </details>
+            </div>
+          </div>
+          <div class="tile concept">
+            <div class="body">
+              <div class="name">Orca</div>
+              <div class="one">Triage for a firehose of signals.</div>
+              <div class="role">Orchestrator · <b>local 27B</b></div>
+              <details class="case"><summary>case study</summary>
+                <p>Sits between the raw event bus and Cosmo, deciding in real time what's noise, what's an escalation, and what should become work — then dispatching it. Runs on the local 27B model (cheap, always-on), with deterministic durability sweeps so nothing stalls silently. Designed to <strong>fail safe</strong> — rate-capped, deduplicated, with a degraded-mode brake — because an orchestrator that can dispatch is an orchestrator that can flood.</p>
+              </details>
+            </div>
+          </div>
+          <div class="tile concept">
+            <div class="body">
+              <div class="name">Eagle</div>
+              <div class="one">Business profiling and outreach, as an autonomous agent.</div>
+              <div class="role">Sales-intel engine · <b>local 27B / SDK</b></div>
+              <details class="case"><summary>case study</summary>
+                <p>Builds business profiles, manages an outreach pipeline, runs briefings. It exists in two forms — local 27B and a frontier backend via the Agent SDK — the same agent, swapped by a config line. <strong>Structured by contract:</strong> the agent returns typed JSON and code does the writes, so nothing depends on the model calling a tool correctly.</p>
+              </details>
+            </div>
+          </div>
+          <div class="tile concept">
+            <div class="body">
+              <div class="name">Scout</div>
+              <div class="one">An internal agent capability, shipped as its own product.</div>
+              <div class="role">Sales-intel SaaS · <b>CF Workers + D1</b></div>
+              <details class="case"><summary>case study</summary>
+                <p>A standalone SaaS surface (Hono + React on Cloudflare Workers, D1) that turns the platform's business-profiling into a usable app — campaigns, leads, outreach — on its own domain. A clean example of productizing an internal capability without rebuilding it.</p>
+              </details>
+            </div>
+          </div>
+          <div class="tile concept">
+            <div class="body">
+              <div class="name">Sentinel</div>
+              <div class="one">The agent that watches the other agents.</div>
+              <div class="role">SRE · <b>TypeScript / Node</b></div>
+              <details class="case"><summary>case study</summary>
+                <p>A monitoring service that watches the platform like an SRE: Docker events, consumer lag on the bus, model health. Its design principle is hard-won — <strong>measure liveness by real work progress, not heartbeats</strong> — after green health checks once masked a stalled pipeline. It's why a 20-agent system run by one person doesn't quietly fall over.</p>
+              </details>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Band 3 — Apps ===== -->
+      <div class="band">
+        <div class="band-head">Apps</div>
+        <p class="band-sub">Shipped on the platform. Live ones link out.</p>
+        <div class="tiles">
+          <div class="tile">
+            <a href="https://tailatlas.com" target="_blank" rel="noopener"><div class="shot" style="background-image:url('/assets/portfolio/tailatlas.jpg')"></div></a>
+            <div class="body">
+              <div class="name"><a href="https://tailatlas.com" target="_blank" rel="noopener">Tail Atlas</a> <span class="badge deployed">deployed</span></div>
+              <div class="one">One clean picture of the world fleet, from sources that all disagree.</div>
+              <details class="case"><summary>case study</summary>
+                <p>710,000 aircraft and 313,000 owners served at the edge (1.3M+ in the full pipeline), assembled from <strong>~25 aviation registries</strong> plus live position data. A Python pipeline normalizes them over the bus into Postgres; a React + Hono app serves it from Cloudflare Workers, D1, and R2 — fast and cheap, with 435 tests. The volume isn't the hard part — making tail numbers, airframes, and type certificates <strong>agree across contradictory sources with no hand-curation</strong> is. That resolution layer is the product.</p>
+              </details>
+            </div>
+          </div>
+          <div class="tile">
+            <a href="https://telekora.com" target="_blank" rel="noopener"><div class="shot" style="background-image:url('/assets/portfolio/telekora.jpg')"></div></a>
+            <div class="body">
+              <div class="name"><a href="https://telekora.com" target="_blank" rel="noopener">Telekora</a> <span class="badge deployed">deployed</span></div>
+              <div class="one">Generate a whole course — slides, images, quizzes — from a prompt.</div>
+              <details class="case"><summary>case study</summary>
+                <p>A multi-tenant B2B LMS where each tenant brings their own model: <strong>per-tenant LLM keys are envelope-encrypted in Cloudflare Secrets Store</strong>, and course generation uses forced tool-use against a strict schema, so the output is always valid JSON — never a parsing gamble. A Hono API on Cloudflare Workers with D1, R2, and KV; Stripe billing, Google auth, and a Telegram Mini App front end. A complete SaaS, not a demo.</p>
+              </details>
+            </div>
+          </div>
+          <div class="tile">
+            <a href="https://hometownwire.com" target="_blank" rel="noopener"><div class="shot" style="background-image:url('/assets/portfolio/hometownwire.jpg')"></div></a>
+            <div class="body">
+              <div class="name"><a href="https://hometownwire.com" target="_blank" rel="noopener">HometownWire</a> <span class="badge flight">in&nbsp;flight</span></div>
+              <div class="one">Turning the public record into something you can actually search.</div>
+              <details class="case"><summary>case study</summary>
+                <p>Council meetings, votes, and speaker-labeled transcripts, made searchable and readable. A React + Hono app on Cloudflare Workers over a civic corpus in D1 — and the data lands through the <strong>same platform pipeline as everything else</strong>, as additive handlers, so there's no separate stack to maintain. The hard part of civic data is sourcing and structuring it; the platform already does both.</p>
+              </details>
+            </div>
+          </div>
+          <div class="tile">
+            <a href="/"><div class="shot ph">▶&nbsp; you're playing it</div></a>
+            <div class="body">
+              <div class="name"><a href="/">Port Foliopolis</a> <span class="badge live">live</span></div>
+              <div class="one">A playable RPG where the NPCs are live LLMs.</div>
+              <details class="case"><summary>case study</summary>
+                <p>Haggle with a business hog, reason your way past an ancient demilich — the dialogue is generated live. Phaser on Cloudflare Pages; the NPC brains run on free-tier models behind a Worker that <strong>holds the keys server-side, caps usage per visitor, and fails closed</strong>, so a toy can never run up a bill. Built in about six hours — a sample of the velocity, not the headline.</p>
+              </details>
+            </div>
+          </div>
+          <div class="tile">
+            <a href="https://dreamtree.org" target="_blank" rel="noopener"><div class="shot ph">preview soon</div></a>
+            <div class="body">
+              <div class="name"><a href="https://dreamtree.org" target="_blank" rel="noopener">dreamtree</a> <span class="badge flight">in&nbsp;flight</span></div>
+              <div class="one">A data-sovereignty project.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ===== Band 4 — Tooling / open source ===== -->
+      <div class="band">
+        <div class="band-head">Tooling</div>
+        <p class="band-sub">Built, not bought.</p>
+        <div class="tiles">
+          <div class="tile concept">
+            <div class="body">
+              <div class="name">Bamboo <span class="badge deployed">deployed</span></div>
+              <div class="one">I didn't pick an agent framework. I built one.</div>
+              <details class="case"><summary>case study</summary>
+                <p>The runtime under every agent above. It started as a containerized bot and got rebuilt until <strong>every agent action flows through the message bus and is auditable</strong> — no agent calls another directly, so the whole system is logged and replayable. One config line swaps an agent between <strong>local inference and a frontier model</strong>; a new agent is a manifest plus a prompt, no runtime code. It runs persistent, ephemeral, and multi-tenant agents on one substrate — the reason one person can operate a 20-agent organization.</p>
+              </details>
+            </div>
+          </div>
+          <div class="tile concept">
+            <div class="body">
+              <div class="name">otter-docs <span class="badge shipped">shipped · PyPI</span></div>
+              <div class="one">Open-source codebase intelligence for any language.</div>
+              <details class="case"><summary>case study</summary>
+                <p>A polyglot code-intelligence library — tree-sitter ASTs + cross-file symbol resolution + LLM-generated findings and diffs. MIT-licensed, on PyPI, 354 tests, and <strong>F1 0.854 on a Type-4 semantic-clone benchmark</strong>. Auto-docs and senior-dev-style review that run on any codebase, not just mine.</p>
+              </details>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <p class="port-closer">Six months, solo. Two machines, a bucket of domains, a Claude sub, and a dream.</p>
     </section>
   </main>
 </body>

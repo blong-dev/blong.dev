@@ -122,6 +122,30 @@ h2{font-size:1.5rem;color:var(--gold);margin:0 0 6px;letter-spacing:2px;text-tra
 .badge{font-size:.62rem;letter-spacing:1px;text-transform:uppercase;padding:2px 7px;border-radius:99px;border:1px solid;}
 .badge.live{color:#9ad9a0;border-color:#3c6b41;}
 .badge.flight{color:var(--gold);border-color:#6b5524;}
+.badge.deployed{color:#8fc7e0;border-color:#37596b;}
+.badge.shipped{color:#c3a0e8;border-color:#574879;}
+
+/* portfolio bands + expandable case studies */
+.band{margin:40px 0 16px;}
+.band:first-of-type{margin-top:12px;}
+.band-head{font-family:'Courier New',monospace;color:var(--parchment);font-size:1rem;
+  letter-spacing:2px;text-transform:uppercase;margin:0 0 4px;display:flex;align-items:center;gap:12px;}
+.band-head::after{content:"";flex:1;height:1px;background:var(--line);}
+.band-sub{color:var(--parchment-dim);font-size:.85rem;margin:0 0 18px;max-width:680px;}
+.tile .role{font-family:'Courier New',monospace;font-size:.66rem;letter-spacing:1px;
+  text-transform:uppercase;color:var(--parchment-dim);margin-top:7px;}
+.tile .role b{color:var(--gold);font-weight:normal;}
+.tile.concept .body{padding-top:16px;}
+details.case{margin-top:11px;border-top:1px solid var(--line);padding-top:8px;}
+details.case>summary{cursor:pointer;font-family:'Courier New',monospace;font-size:.68rem;
+  letter-spacing:1px;text-transform:uppercase;color:var(--gold);list-style:none;outline:none;}
+details.case>summary::-webkit-details-marker{display:none;}
+details.case>summary::before{content:"▸";margin-right:6px;display:inline-block;}
+details.case[open]>summary::before{content:"▾";}
+details.case p{color:var(--parchment-dim);font-size:.85rem;line-height:1.55;margin:9px 0 2px;}
+.tile .shot.ph a,.tile .shot.ph{color:var(--parchment-dim);text-decoration:none;}
+.port-closer{font-family:'Courier New',monospace;color:var(--gold);font-size:1rem;
+  letter-spacing:1px;text-align:center;margin:50px 0 6px;padding-top:28px;border-top:1px solid var(--line);}
 
 /* ===== about ===== */
 .about-grid{display:grid;grid-template-columns:200px 1fr;gap:30px;align-items:start;}

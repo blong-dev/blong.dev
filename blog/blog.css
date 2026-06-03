@@ -1,0 +1,103 @@
+/* blong.dev — /blog/ — long-form reading on the site's obsidian theme.
+ *
+ * The page chrome (sticky top nav, footer) comes from site.css/site.js,
+ * which inject and style their own `<nav>`. This stylesheet only defines
+ * the reading-specific layout: list view (.bloglist), article view
+ * (.post), and the typography for prose, code, tables, and quotes.
+ *
+ * Palette is the site palette (--obsidian, --parchment, --gold) — set
+ * in site.css's :root. The vars below are local aliases the rest of
+ * the file reads through so a future palette tweak is one block.
+ */
+
+:root{
+  --blog-bg:#14141b;             /* obsidian — same as site.css */
+  --blog-ink:#e9dfc6;            /* parchment */
+  --blog-mut:#a9a18a;            /* parchment-dim */
+  --blog-line:#2d2d3a;           /* site line */
+  --blog-accent:#e0b34e;         /* site gold — the brand accent */
+  --blog-code-bg:#1c1c26;        /* obsidian-2 */
+  --blog-code-border:#2d2d3a;
+}
+
+/* Body is set by site.css already; keep this minimal so we don't
+ * override the shared shell. Only line-height tweak for reading. */
+body{line-height:1.65}
+
+/* ── blog index ─────────────────────────────────────────── */
+.bloglist{max-width:760px;margin:0 auto;padding:56px 24px 96px}
+.bloglist > h1{font-size:48px;font-weight:800;margin:0 0 12px;letter-spacing:-1px;color:var(--blog-ink)}
+.bloglist > .lede{color:var(--blog-mut);font-size:17px;margin:0 0 48px;line-height:1.55}
+.bloglist ul{list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:40px}
+.bloglist li{padding:24px 0 0;border-top:1px solid var(--blog-line)}
+.bloglist li:first-child{border-top:none;padding-top:0}
+.bloglist .meta{font-size:11.5px;color:var(--blog-mut);text-transform:uppercase;letter-spacing:1.6px;margin:0 0 10px}
+.bloglist h2{font-size:24px;line-height:1.25;font-weight:700;margin:0 0 10px;letter-spacing:-.3px}
+.bloglist h2 a{color:var(--blog-ink);text-decoration:none}
+.bloglist h2 a:hover{color:var(--blog-accent)}
+.bloglist li > p:last-child{margin:0;color:var(--blog-mut);font-size:15px;line-height:1.6}
+
+/* ── post body ──────────────────────────────────────────── */
+.post{max-width:760px;margin:0 auto;padding:56px 24px 96px}
+.post .meta{font-size:11.5px;color:var(--blog-mut);text-transform:uppercase;letter-spacing:1.6px;margin:0 0 18px}
+
+/* Small "← Back to blog" return link rendered inside .post by the
+ * sync template; site.js's shared nav has a Blog entry now but
+ * this is the conventional in-article back affordance. */
+.post .back{display:inline-block;margin-bottom:24px;font-size:13px;
+  color:var(--blog-mut);text-decoration:none;letter-spacing:.3px}
+.post .back:hover{color:var(--blog-ink)}
+
+.post h1{font-size:38px;font-weight:800;letter-spacing:-.8px;color:var(--blog-ink);
+  margin:0 0 18px;line-height:1.18}
+.post h2{font-size:26px;font-weight:700;color:var(--blog-ink);margin:56px 0 14px;letter-spacing:-.3px;line-height:1.25;
+  padding-top:24px;border-top:1px solid var(--blog-line)}
+.post h3{font-size:18.5px;font-weight:700;color:var(--blog-ink);margin:36px 0 10px;line-height:1.3}
+.post h4{font-size:15.5px;font-weight:700;color:var(--blog-ink);margin:28px 0 8px;text-transform:uppercase;letter-spacing:1.2px}
+
+.post p{font-size:16.5px;line-height:1.7;color:var(--blog-ink);margin:0 0 18px}
+.post p em:first-child:last-child{color:var(--blog-mut);font-style:italic}
+.post hr{border:none;border-top:1px solid var(--blog-line);margin:32px 0}
+.post strong{color:var(--blog-ink);font-weight:700}
+.post em{color:var(--blog-ink)}
+
+.post a{color:var(--blog-accent);text-decoration:none;border-bottom:1px solid rgba(224,179,78,.35);
+  transition:border-color .15s,color .15s}
+.post a:hover{color:var(--blog-ink);border-bottom-color:var(--blog-ink)}
+
+.post ul,.post ol{padding-left:22px;margin:0 0 20px}
+.post li{margin:6px 0;line-height:1.65}
+.post blockquote{margin:24px 0;padding:14px 20px;border-left:3px solid var(--blog-accent);
+  background:rgba(224,179,78,.04);color:var(--blog-ink);font-style:italic}
+.post blockquote p{margin:0}
+
+/* ── code ───────────────────────────────────────────────── */
+.post code{font-family:"SF Mono",Menlo,Consolas,monospace;font-size:14px;
+  background:var(--blog-code-bg);border:1px solid var(--blog-code-border);border-radius:4px;
+  padding:2px 6px;color:var(--blog-accent)}
+.post pre{background:var(--blog-code-bg);border:1px solid var(--blog-code-border);border-radius:8px;
+  padding:16px 18px;overflow-x:auto;margin:0 0 22px;font-size:13.5px;line-height:1.55}
+.post pre code{background:none;border:none;padding:0;color:var(--blog-ink);font-size:13.5px}
+
+/* ── tables ─────────────────────────────────────────────── */
+.post table{border-collapse:collapse;width:100%;margin:18px 0 26px;font-size:14px}
+.post th,.post td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--blog-line);vertical-align:top}
+.post th{color:var(--blog-mut);text-transform:uppercase;letter-spacing:1.2px;font-size:11.5px;
+  border-bottom:1.5px solid var(--blog-line);font-weight:700}
+.post tr:last-child td{border-bottom:none}
+.post td code{font-size:13px}
+
+/* ── footer ─────────────────────────────────────────────── */
+.postfoot{margin-top:64px;padding-top:24px;border-top:1px solid var(--blog-line)}
+.postfoot p{font-size:14px;color:var(--blog-mut);margin:0}
+.postfoot a{color:var(--blog-mut);text-decoration:none;border-bottom:1px solid var(--blog-line)}
+.postfoot a:hover{color:var(--blog-ink);border-bottom-color:var(--blog-ink)}
+
+/* ── narrow viewports ──────────────────────────────────── */
+@media (max-width:620px){
+  .post h1{font-size:30px}
+  .post h2{font-size:22px}
+  .post p,.post li{font-size:15.5px}
+  .bloglist > h1{font-size:36px}
+  .bloglist h2{font-size:20px}
+}

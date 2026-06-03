@@ -7,17 +7,32 @@
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <link rel="icon" type="image/png" href="/favicon.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<meta name="theme-color" content="#0b1020">
+<meta name="theme-color" content="#14141b">
+<link rel="stylesheet" href="/site.css">
+<script src="/site.js" defer></script>
 <style>
   :root{
-    --bg:#0b1020; --ink:#e5edf7; --mut:#8aa0bd; --line:#3a4a66;
+    /* Stack palette aligned to the obsidian/parchment site theme.
+     * Region colors (ing/pipe/wf/data/inf/surf/prod/bus) carry
+     * functional meaning for the system map so they stay vivid —
+     * --bus is the only one nudged toward brand gold. */
+    --bg:#14141b; --ink:#e9dfc6; --mut:#a9a18a; --line:#2d2d3a;
     --ing:#22c55e; --pipe:#a855f7; --wf:#c084fc; --data:#3b82f6;
-    --inf:#2dd4bf; --surf:#818cf8; --prod:#38bdf8; --bus:#f59e0b;
+    --inf:#2dd4bf; --surf:#818cf8; --prod:#38bdf8; --bus:#e0b34e;
+    /* Site-css already defines --obsidian-2 etc; we re-declare the
+     * subset the stack chrome reaches for so this file's CSS reads
+     * standalone. */
+    --obsidian-2:#1c1c26;
   }
   *{box-sizing:border-box}
-  html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);
-    font-family:Helvetica,Arial,sans-serif;overflow:hidden;-webkit-user-select:none;user-select:none}
-  #vp{position:absolute;inset:0;overflow:hidden;cursor:grab}
+  /* Body is a flex column so the injected sticky nav stacks above
+   * the viewport and #vp claims the remaining height. The dragging
+   * overflow scope moves from body to #vp accordingly. */
+  html,body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:Helvetica,Arial,sans-serif;-webkit-user-select:none;user-select:none}
+  html,body{height:100vh}
+  body{display:flex;flex-direction:column}
+  #vp{flex:1;position:relative;overflow:hidden;cursor:grab}
   #vp.drag{cursor:grabbing}
   #world{position:absolute;top:0;left:0;transform-origin:0 0;will-change:transform}
   svg#edges{position:absolute;top:0;left:0;overflow:visible}
@@ -32,31 +47,34 @@
     box-shadow:0 6px 20px rgba(0,0,0,.35);opacity:0;transition:opacity .35s,outline-color .2s}
   .node .nlabel{font-weight:700;font-size:14.5px;line-height:1.12;pointer-events:none}
   .node .ndetail{font-size:11px;opacity:0;margin-top:3px;transition:opacity .3s;line-height:1.3;color:rgba(255,255,255,.86);pointer-events:none}
-  .node.hub{align-items:center;text-align:center;color:#0b1020;border:none;opacity:1}
-  .node.hub .ndetail{color:rgba(11,16,32,.8)}
+  .node.hub{align-items:center;text-align:center;color:var(--bg);border:none;opacity:1}
+  .node.hub .ndetail{color:rgba(20,20,27,.8)}
   .node.ext .ndetail{color:var(--mut)}
   .node.sel{outline:3px solid #fff;outline-offset:3px}
   [data-lod="2"] .node,[data-lod="3"] .node,[data-lod="4"] .node{opacity:1}
   [data-lod="3"] .node .ndetail,[data-lod="4"] .node .ndetail{opacity:1}
   [data-lod="3"] .rlabel,[data-lod="4"] .rlabel{opacity:.10}
-  /* chrome */
-  #ctl{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:30;display:flex;gap:7px}
-  #ctl button{background:#101a30;border:1px solid #2a3a58;border-radius:999px;padding:7px 14px;
-    font-size:13px;cursor:pointer;font-weight:600;color:var(--ink)}
-  #ctl button:hover{background:#1a263f}
-  #ctl .play{background:var(--bus);color:#0b1020;border-color:var(--bus)}
+  /* chrome — fixed positioning is relative to the viewport, not the
+   * scroll container, so these still anchor to the visible viewport
+   * the same way they did before the flex-column rework. Top offsets
+   * stay clear of the ~52 px sticky nav. */
+  #ctl{position:fixed;top:74px;left:50%;transform:translateX(-50%);z-index:30;display:flex;gap:7px}
+  #ctl button{background:var(--obsidian-2);border:1px solid var(--line);border-radius:999px;padding:7px 14px;
+    font-size:13px;cursor:pointer;font-weight:600;color:var(--ink);font-family:inherit}
+  #ctl button:hover{background:#26262f}
+  #ctl .play{background:var(--bus);color:var(--bg);border-color:var(--bus)}
   #cap{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);z-index:30;max-width:min(640px,92vw);
-    text-align:center;background:rgba(12,18,33,.9);border:1px solid #25324d;border-radius:14px;
+    text-align:center;background:rgba(20,20,27,.92);backdrop-filter:blur(6px);border:1px solid var(--line);border-radius:14px;
     padding:11px 18px;box-shadow:0 10px 34px rgba(0,0,0,.5)}
-  #cap b{display:block;font-size:14px;margin-bottom:2px;color:#fff}
+  #cap b{display:block;font-size:14px;margin-bottom:2px;color:var(--ink)}
   #cap span{font-size:12.5px;color:var(--mut)}
-  #detail{position:fixed;top:88px;right:16px;width:340px;max-height:68vh;overflow:auto;z-index:30;
-    background:#0f1830;border:1px solid #25324d;border-left:5px solid var(--mut);border-radius:14px;
+  #detail{position:fixed;top:128px;right:16px;width:340px;max-height:62vh;overflow:auto;z-index:30;
+    background:var(--obsidian-2);border:1px solid var(--line);border-left:5px solid var(--bus);border-radius:14px;
     padding:16px 18px;box-shadow:0 18px 50px rgba(0,0,0,.55);
     opacity:0;transform:translateX(14px);pointer-events:none;transition:opacity .25s,transform .25s}
   #detail.show{opacity:1;transform:none;pointer-events:auto}
   #detail .k{font-size:10px;text-transform:uppercase;letter-spacing:1.6px;color:var(--mut)}
-  #detail h4{margin:5px 0 8px;font-size:16px;color:#fff;line-height:1.2}
+  #detail h4{margin:5px 0 8px;font-size:16px;color:var(--ink);line-height:1.2}
   #detail p{margin:0;font-size:13.5px;line-height:1.55;color:var(--ink)}
   #detail .x{position:absolute;top:10px;right:12px;color:var(--mut);cursor:pointer;font-size:16px}
   #hint{position:fixed;left:12px;bottom:12px;color:var(--mut);font-size:11px;z-index:30}
@@ -82,7 +100,7 @@ const cssvar=c=>getComputedStyle(document.documentElement).getPropertyValue('--'
 const world=document.getElementById('world'), svg=document.getElementById('edges'), vp=document.getElementById('vp'), detail=document.getElementById('detail');
 world.style.width=WORLD.w+'px'; world.style.height=WORLD.h+'px';
 svg.setAttribute('width',WORLD.w); svg.setAttribute('height',WORLD.h);
-svg.innerHTML='<defs><marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#3a4a66"/></marker></defs>';
+svg.innerHTML='<defs><marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="'+cssvar('line')+'"/></marker></defs>';
 const edgeEls=[];
 SYS.edges.forEach((e,i)=>{ const a=ctr(N[e.a]),b=ctr(N[e.b]); e.mid={x:(a.x+b.x)/2,y:(a.y+b.y)/2};
   const d=(L&&L.edgePaths&&L.edgePaths[e.a+'>'+e.b])||('M'+a.x+','+a.y+' L'+b.x+','+b.y);
@@ -97,7 +115,7 @@ SYS.regions.forEach(rg=>{ const c=cssvar(rg.cls);
 });
 function nodeEl(n,fill,hub){ const d=document.createElement('div'); d.className='node'+(hub?' hub':''); d.id='n-'+n.id;
   d.style.cssText=`left:${n.x}px;top:${n.y}px;width:${n.w}px;height:${n.h}px;background:${fill}`+(hub?';font-size:17px':'');
-  if(n.ext){d.classList.add('ext');d.style.background='rgba(148,163,184,.07)';d.style.border='2px dashed '+fill;d.style.color='var(--ink)';}
+  if(n.ext){d.classList.add('ext');d.style.background='rgba(233,223,198,.05)';d.style.border='2px dashed '+fill;d.style.color='var(--ink)';}
   d.innerHTML=`<div class="nlabel">${n.label}</div><div class="ndetail">${n.detail||''}</div>`;
   d.addEventListener('click',ev=>{ev.stopPropagation();selectNode(n.id);}); world.appendChild(d);
 }

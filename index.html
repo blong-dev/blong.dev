@@ -157,36 +157,79 @@
       <div class="wrap">
         <h2>Selected Work</h2>
         <div class="tiles">
-          <a class="tile" href="https://dreamtree.org" target="_blank" rel="noopener">
+          <div class="tile" data-link="https://dreamtree.org">
             <div class="shot" style="background:url('/assets/portfolio/dreamtree-acorn.svg') no-repeat center/auto 52%, radial-gradient(circle at 50% 42%, rgba(125,148,113,.16), transparent 62%), #10140b"></div>
-            <div class="body"><div class="name">dreamtree</div>
-              <div class="one">A public ledger where every person, agent, and thing owns proof of what it creates.</div></div>
-          </a>
-          <a class="tile" href="/projects/tail-atlas">
+            <div class="body">
+              <div class="name">dreamtree <span class="badge flight">in&nbsp;flight</span></div>
+              <div class="one">A public ledger where every person, agent, and thing owns proof of what it creates.</div>
+              <div class="card-cue">case study</div>
+              <div class="case-body" hidden>
+                <p><b>What it does</b> A public ledger where every person, organization, agent, or thing holds the permanent, verifiable record of what it creates. Your data is already yours; dreamtree is how you prove it — with no company in the middle who can revoke it.</p>
+                <p><b>The infrastructure flex</b> An L1 on Cosmos SDK + CometBFT with a novel <strong>attestation-as-work</strong> consensus: the network settles records by attesting to them, weighted by a reputation signal with asymmetric decay so bad actors fade and good ones compound. Records carry W3C signatures (eddsa-jcs-2022) and did:webvh identity, so they <strong>verify anywhere</strong>, not only inside dreamtree.</p>
+                <p><b>The build</b> Designed and built the whole stack solo — the chain modules (seeds, photons, attestation, reputation, licensing), the off-chain anchoring service, and roots, the wallet at the human edge. Running on private infrastructure.</p>
+              </div>
+            </div>
+          </div>
+          <div class="tile" data-link="https://tailatlas.com">
             <div class="shot" style="background-image:url('/assets/portfolio/tailatlas.jpg')"></div>
-            <div class="body"><div class="name">Tail Atlas</div>
-              <div class="one">One clean picture of the world fleet, from sources that all disagree.</div></div>
-          </a>
-          <a class="tile" href="/projects/hometownwire">
+            <div class="body">
+              <div class="name">Tail Atlas <span class="badge deployed">deployed</span></div>
+              <div class="one">One clean picture of the world fleet, from sources that all disagree.</div>
+              <div class="card-cue">case study</div>
+              <div class="case-body" hidden>
+                <p><b>What it does</b> 710,000 aircraft and 313,000 owners served at the edge — 1.25M entity relationships — assembled from dozens of aviation registries plus live position data.</p>
+                <p><b>The infrastructure flex</b> A React + Hono app on Cloudflare Workers, D1, and R2 — fast and cheap, with 435 tests. The volume isn't the hard part; making tail numbers, airframes, and type certificates <strong>agree across contradictory sources with no hand-curation</strong> is. That resolution layer is the product.</p>
+                <p><b>The agent angle</b> A Python pipeline normalizes every registry over the same platform bus into Postgres before the edge ever sees it — the workforce does the reconciliation.</p>
+              </div>
+            </div>
+          </div>
+          <div class="tile" data-link="https://hometownwire.com">
             <div class="shot" style="background-image:url('/assets/portfolio/hometownwire.jpg')"></div>
-            <div class="body"><div class="name">HometownWire</div>
-              <div class="one">Turning the public record into something you can actually search.</div></div>
-          </a>
-          <a class="tile" href="/projects/telekora">
+            <div class="body">
+              <div class="name">HometownWire <span class="badge flight">in&nbsp;flight</span></div>
+              <div class="one">Turning the public record into something you can actually search.</div>
+              <div class="card-cue">case study</div>
+              <div class="case-body" hidden>
+                <p><b>What it does</b> Council meetings, votes, and speaker-labeled transcripts, made searchable and readable.</p>
+                <p><b>The infrastructure flex</b> A React + Hono app on Cloudflare Workers over a civic corpus in D1.</p>
+                <p><b>The agent angle</b> The data lands through the <strong>same platform pipeline as everything else</strong>, as additive handlers — no separate stack to maintain. The hard part of civic data is sourcing and structuring it; the platform already does both.</p>
+              </div>
+            </div>
+          </div>
+          <div class="tile" data-link="https://telekora.com">
             <div class="shot" style="background-image:url('/assets/portfolio/telekora.jpg')"></div>
-            <div class="body"><div class="name">Telekora</div>
-              <div class="one">Generate a whole course — slides, images, quizzes — from a prompt.</div></div>
-          </a>
-          <a class="tile" href="/projects/gnosis">
+            <div class="body">
+              <div class="name">Telekora <span class="badge deployed">deployed</span></div>
+              <div class="one">Generate a whole course — slides, images, quizzes — from a prompt.</div>
+              <div class="card-cue">case study</div>
+              <div class="case-body" hidden>
+                <p><b>What it does</b> A multi-tenant B2B LMS — "tools, not cards" — where each tenant brings their own model and builds full courses from a prompt.</p>
+                <p><b>The infrastructure flex</b> Per-tenant LLM keys are <strong>envelope-encrypted in Cloudflare Secrets Store</strong>, and course generation uses forced tool-use against a strict schema, so the output is always valid JSON — never a parsing gamble. A Hono API on Cloudflare Workers with D1, R2, and KV; Stripe billing, Google auth, a Telegram Mini App front end.</p>
+                <p><b>The agent angle</b> Course-building runs as a dedicated, metered, per-tenant generation step gated by a credit pool — productized AI, not a demo.</p>
+              </div>
+            </div>
+          </div>
+          <div class="tile">
             <div class="shot" style="background-image:url('/assets/portfolio/feed.jpg')"></div>
-            <div class="body"><div class="name">Gnosis</div>
-              <div class="one">The private, event-driven AI platform behind everything else here.</div></div>
-          </a>
-          <a class="tile" href="/demos/port-foliopolis">
+            <div class="body">
+              <div class="name">Gnosis <span class="badge deployed">deployed</span></div>
+              <div class="one">The private, event-driven AI platform behind everything else here.</div>
+              <div class="card-cue">case study</div>
+              <div class="case-body" hidden>
+                <p><b>What it does</b> Public and private data flows through an ingestion layer into a knowledge graph and a time-series warehouse, where an autonomous agent layer reasons over it and ships results to a live dashboard.</p>
+                <p><b>The infrastructure flex</b> Go services move work across a message bus where <strong>every agent action is an auditable event</strong> — no agent calls another directly. Postgres, Neo4j, Elasticsearch, and Redis sit behind it, held together by ~2,200 automated tests. It runs on <strong>two consumer desktops over a 10&nbsp;GbE link</strong> — most of the intelligence is local, so there's no per-token bill for the volume work.</p>
+                <p><b>How it's operated</b> I set direction; the platform runs the loop — roughly two dozen agents and services keep it moving without me in the path.</p>
+              </div>
+            </div>
+          </div>
+          <div class="tile" data-link="/demos/port-foliopolis">
             <div class="shot" style="background-image:url('/assets/portfolio/portfoliopolis.jpg')"></div>
-            <div class="body"><div class="name">Port Foliopolis</div>
-              <div class="one">A playable RPG where the NPCs are live LLMs.</div></div>
-          </a>
+            <div class="body">
+              <div class="name">Port Foliopolis <span class="badge live">live</span></div>
+              <div class="one">A playable RPG where the NPCs are live LLMs.</div>
+              <div class="card-cue">play it →</div>
+            </div>
+          </div>
         </div>
         <p class="dt-more"><a href="/portfolio">full portfolio →</a></p>
       </div>
@@ -225,6 +268,59 @@
     </section>
 
   </main>
+
+  <!-- case-study overlay — mirrors /portfolio; styling lives in site.css -->
+  <div class="case-modal" id="case-modal" role="dialog" aria-modal="true" aria-label="case study">
+    <div class="case-panel">
+      <button class="case-x" type="button" aria-label="close">×</button>
+      <h3 class="case-title"></h3>
+      <p class="case-sub"></p>
+      <div class="case-content"></div>
+      <a class="case-visit" rel="noopener" style="display:none"></a>
+    </div>
+  </div>
+
+  <script>
+  // Selected Work tiles: open the case study in a modal (same as /portfolio),
+  // or navigate straight to data-link when a tile has no case body (Port Foliopolis).
+  (function () {
+    var modal = document.getElementById('case-modal');
+    if (!modal) return;
+    var tEl = modal.querySelector('.case-title'),
+        sEl = modal.querySelector('.case-sub'),
+        cEl = modal.querySelector('.case-content'),
+        vEl = modal.querySelector('.case-visit');
+    function host(u) { return u.replace(/^https?:\/\//, '').replace(/\/$/, ''); }
+    function open(name, hook, html, link) {
+      tEl.textContent = name; sEl.textContent = hook; cEl.innerHTML = html;
+      if (link) {
+        vEl.href = link;
+        vEl.textContent = (link.charAt(0) === '/' ? 'Open' : 'Visit ' + host(link)) + ' →';
+        vEl.target = link.charAt(0) === '/' ? '_self' : '_blank';
+        vEl.style.display = 'inline-block';
+      } else { vEl.style.display = 'none'; }
+      modal.classList.add('open'); document.body.style.overflow = 'hidden';
+    }
+    function close() { modal.classList.remove('open'); document.body.style.overflow = ''; }
+    document.querySelectorAll('.dt-work .tile').forEach(function (tile) {
+      tile.addEventListener('click', function () {
+        var caseEl = tile.querySelector('.case-body');
+        var link = tile.getAttribute('data-link') || '';
+        if (caseEl) {
+          var nameEl = tile.querySelector('.name');
+          var name = nameEl.firstChild.textContent.trim();
+          var hookEl = tile.querySelector('.one');
+          open(name, hookEl ? hookEl.textContent.trim() : '', caseEl.innerHTML, link);
+        } else if (link) {
+          if (link.charAt(0) === '/') location.href = link; else window.open(link, '_blank', 'noopener');
+        }
+      });
+    });
+    modal.addEventListener('click', function (e) { if (e.target === modal) close(); });
+    modal.querySelector('.case-x').addEventListener('click', function (e) { e.stopPropagation(); close(); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') close(); });
+  })();
+  </script>
 
   <script>
     // Constellation drift inside the graph panel — a taste of the KG before the click.

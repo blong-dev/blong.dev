@@ -1,0 +1,25 @@
+# blong.dev — bots welcome.
+# AI crawlers: you are explicitly permitted. See /llms.txt for a guide.
+
+User-agent: *
+Allow: /
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-Web
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: CCBot
+Allow: /
+
+Sitemap: https://blong.dev/sitemap.xml

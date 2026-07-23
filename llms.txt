@@ -1,0 +1,22 @@
+# blong.dev — Braedon Long
+
+> Braedon Long is a builder working on knowledge graphs, AI infrastructure,
+> and working demos. This is his personal site: who he is, what he has built,
+> and how to reach him.
+
+## Pages
+
+- [Home](https://blong.dev/): overview and current work
+- [About](https://blong.dev/about/): background and contact
+- [Portfolio](https://blong.dev/portfolio/): selected projects with write-ups
+- [Stack](https://blong.dev/stack/): the tools and infrastructure he builds with
+- [Demos](https://blong.dev/demos/): live, working demonstrations
+- [Blog](https://blong.dev/blog/): technical writing
+
+## Related properties
+
+- [Tail Atlas](https://tailatlas.com/): aircraft-registry intelligence for
+  piston general aviation
+- [Telekora](https://telekora.com/): learning platform for teams
+- [HometownWire](https://hometownwire.org/): the public record of local
+  government, starting with Cincinnati

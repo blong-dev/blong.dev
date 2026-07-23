@@ -2,6 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
+  <!-- game.js loads assets by relative path (assets/…); this page lives at /demos/port-foliopolis/,
+       so anchor all relative URLs to the site root or every texture 404s to an HTML fallback. -->
+  <base href="/">
   <title>Port Foliopolis — blong.dev</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="description" content="Port Foliopolis — a playable RPG where the townsfolk are live LLMs. Haggle with a business hog, reason past an ancient demilich.">

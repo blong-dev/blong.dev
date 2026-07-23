@@ -1,0 +1,12 @@
+dreamtree — an identity for every noun
+Founder & Protocol Architect
+
+A public ledger where every person, organization, agent, or thing holds the permanent, verifiable record of what it creates. Your data is already yours; dreamtree is how you prove it.
+
+The hard problem is trust without a gatekeeper — proving who made what, and when, with no company in the middle who can revoke it. dreamtree settles records by attestation-as-work, weighted by a reputation signal with asymmetric decay so bad actors fade and good ones compound. Built on Cosmos SDK + CometBFT with W3C signatures (eddsa-jcs-2022) and did:webvh identity, so a record verifies anywhere, not only inside dreamtree.
+
+Designed and built the full stack solo: the chain modules (seeds, photons, attestation, reputation, licensing), the off-chain anchoring service, and roots — the wallet at the human edge. Running on private infrastructure.
+
+Skills: protocol design, blockchain, Cosmos SDK, Go, distributed systems, cryptography, provenance, verifiable credentials.
+
+Link: https://dreamtree.org

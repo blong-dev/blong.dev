@@ -1,0 +1,10 @@
+roots — own your data, prove what you do
+Founder & Architect
+
+The wallet at the human edge of dreamtree: where a person or organization holds their identity and the verifiable credentials others issue them, and can prove any of it to anyone — without the issuer in the loop. Your data is already yours; roots is where you keep the proof.
+
+A Cloudflare Workers + D1 service that issues W3C Verifiable Credentials with real Data Integrity proofs (eddsa-jcs-2022), serves did:web / did:webvh documents, and gates every read behind consent with a full audit trail — plus an MCP endpoint so agents can verify credentials too. Every record anchors to the dreamtree chain for tamper-evidence, and it implements the CAWG identity-claims-aggregation profile that rides inside C2PA content provenance.
+
+Skills: verifiable credentials, cryptography, W3C DID, C2PA/CAWG, TypeScript, Cloudflare Workers, edge computing.
+
+Link: https://id.dreamtree.org

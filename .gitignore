@@ -29,3 +29,7 @@ stack/system-map.png
 stack/workspace.dsl
 stack/workspace.json
 stack/*.err
+stack/.structurizr/
+
+# local build / deploy caches (machine-specific, regenerated)
+.wrangler/

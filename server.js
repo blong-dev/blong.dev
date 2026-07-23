@@ -1,6 +1,6 @@
 // Port Foliopolis dev server: static files + a tiny chat proxy.
-// The proxy holds the API keys SERVER-SIDE (loaded from .dev.vars / env — never
-// shipped to the browser) and fronts Gemini (Emma, Phil) + Groq (Roq). In
+// The proxy holds the API keys SERVER-SIDE (loaded from _blong-internal / env — never
+// shipped to the browser, never inside the deploy dir) and fronts Gemini (Emma, Phil) + Groq (Roq). In
 // production the CF Worker serves this same /api/chat contract.
 const http = require('http'), fs = require('fs'), path = require('path');
 const ROOT = __dirname, PORT = 8173;
@@ -10,7 +10,7 @@ const TYPES = { '.html':'text/html', '.js':'text/javascript', '.css':'text/css',
 // --- keys (server-side only) ---
 let GEMINI_KEY = process.env.GEMINI_API_KEY || '', GROQ_KEY = process.env.GROQ_API_KEY || '';
 try {
-  fs.readFileSync(path.join(ROOT, '.dev.vars'), 'utf8').split('\n').forEach(line => {
+  fs.readFileSync(path.join(ROOT, '..', '_blong-internal', 'blong-dev.dev.vars'), 'utf8').split('\n').forEach(line => {
     const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.+?)\s*$/);
     if (m && m[1] === 'GEMINI_API_KEY') GEMINI_KEY = m[2];
     if (m && m[1] === 'GROQ_API_KEY') GROQ_KEY = m[2];

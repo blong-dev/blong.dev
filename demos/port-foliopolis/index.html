@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Port Foliopolis — blong.dev</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="description" content="Port Foliopolis — a playable RPG where the townsfolk are live LLMs. Haggle with a business hog, reason past an ancient demilich.">
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <meta name="theme-color" content="#0a0a0a">
+  <link rel="stylesheet" href="/site.css">
+  <script src="/site.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
+</head>
+<body>
+  <div class="gb-stage">
+    <div class="gb">
+      <div class="gb-top">
+        <span class="gb-led"></span> Power · Port Foliopolis
+        <span class="grille"><i></i><i></i><i></i><i></i><i></i></span>
+      </div>
+      <div class="gb-screen-frame">
+        <div id="game"></div>
+      </div>
+      <div class="gb-brand">b<b>long</b>.dev</div>
+      <div class="gb-controls">
+        <div class="gb-dpad">
+          <div class="bar h"></div><div class="bar v"></div>
+          <button class="d-up" aria-label="up">▲</button>
+          <button class="d-down" aria-label="down">▼</button>
+          <button class="d-left" data-pad="left" aria-label="move left">◀</button>
+          <button class="d-right" data-pad="right" aria-label="move right">▶</button>
+        </div>
+        <div class="gb-buttons">
+          <button class="gb-btn s" data-pad="talk" aria-label="speak">S</button>
+          <button class="gb-btn j" data-pad="jump" aria-label="jump">J</button>
+          <button class="gb-btn a" data-pad="attack" aria-label="attack">A</button>
+        </div>
+      </div>
+    </div>
+    <p class="gb-hint">
+      <span class="hint-key">← → move · space jump · A attack · S talk</span>
+      <span class="hint-touch">← → move · J jump · A attack · S talk &nbsp;·&nbsp; or tap the buttons</span>
+      &nbsp;·&nbsp; <a class="src" href="https://github.com/blong-dev/blong.dev" target="_blank" rel="noopener">source ↗</a></p>
+  </div>
+
+  <script src="/sprites.js"></script>
+  <script src="/chat.js"></script>
+  <script src="/game.js"></script>
+</body>
+</html>

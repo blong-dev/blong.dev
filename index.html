@@ -4,49 +4,266 @@
   <meta charset="utf-8">
   <title>Braedon Long — blong.dev</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="description" content="Braedon Long — enterprise architect & builder. Play Port Foliopolis, then see the work.">
+  <meta name="description" content="Braedon Long turns technology into tools people own. Explore the systems, the platform, and the demos behind the work.">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="icon" type="image/png" href="/favicon.png">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <meta name="theme-color" content="#0a0a0a">
   <link rel="stylesheet" href="/site.css">
   <script src="/site.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.1/dist/phaser.min.js"></script>
+  <style>
+    /* ── lander-only styles (shell) — obsidian grove: gold canopy, green roots ── */
+    :root{ --moss:#3fae74; --moss-dim:#2c7a53; }
+    main.lander{max-width:none;padding:0;}
+    .lander section{border-bottom:none;padding:0;}
+    .wrap{max-width:1040px;margin:0 auto;padding:0 22px;}
+
+    /* hero — canopy. Copy lives here; the roots pull the eye down into the graph. */
+    .dt-hero{position:relative;padding:72px 0 0;overflow:hidden;}
+    .dt-hero::before{content:"";position:absolute;inset:0;pointer-events:none;
+      background:
+        radial-gradient(52% 42% at 18% 12%, rgba(224,179,78,.10), transparent 70%),
+        radial-gradient(45% 40% at 85% 90%, rgba(63,174,116,.08), transparent 70%);}
+    .dt-eyebrow{font-family:'Courier New',monospace;font-size:.74rem;letter-spacing:3px;
+      text-transform:uppercase;color:var(--gold);margin:0 0 18px;}
+    .dt-hero h1{font-family:Georgia,serif;font-style:italic;font-weight:normal;
+      font-size:clamp(2.1rem,5.6vw,3.9rem);line-height:1.12;letter-spacing:0;
+      text-transform:none;color:var(--parchment);margin:0 0 20px;max-width:17ch;}
+    .dt-hero h1 em{font-style:italic;color:var(--gold);}
+    .dt-sub{color:var(--parchment-dim);font-size:1.06rem;max-width:52ch;margin:0 0 30px;}
+    .dt-ctas{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-bottom:8px;}
+    .btn-root{font-family:'Courier New',monospace;font-size:.9rem;letter-spacing:1px;
+      color:var(--obsidian);background:var(--gold);border-radius:99px;padding:12px 24px;
+      box-shadow:0 0 0 1px var(--gold), 0 6px 24px rgba(224,179,78,.22);
+      transition:transform .15s, box-shadow .15s;}
+    .btn-root:hover{text-decoration:none;transform:translateY(-2px);
+      box-shadow:0 0 0 1px var(--gold), 0 10px 32px rgba(224,179,78,.34);}
+    .btn-ghost{font-family:'Courier New',monospace;font-size:.9rem;letter-spacing:1px;
+      color:var(--parchment);border:1px solid var(--line);border-radius:99px;padding:11px 22px;}
+    .btn-ghost:hover{text-decoration:none;border-color:var(--moss);color:var(--moss);}
+
+    /* the roots — grow out of the hero, terminate in the graph panel */
+    .dt-roots{display:block;width:100%;height:200px;margin:-6px 0 -58px;pointer-events:none;}
+    .dt-roots path{fill:none;stroke:url(#rootGrad);stroke-width:1.6;stroke-linecap:round;
+      stroke-dasharray:1;stroke-dashoffset:1;animation:grow 2.4s ease-out forwards;}
+    .dt-roots path:nth-child(odd){animation-delay:.35s;}
+    .dt-roots path:nth-child(3n){animation-delay:.7s;stroke-width:1.1;}
+    .dt-roots circle{fill:var(--moss);opacity:0;animation:tip 1s ease-out 2.2s forwards;}
+    @keyframes grow{to{stroke-dashoffset:0;}}
+    @keyframes tip{to{opacity:.85;}}
+    @media (prefers-reduced-motion: reduce){
+      .dt-roots path{animation:none;stroke-dashoffset:0;}
+      .dt-roots circle{animation:none;opacity:.85;}
+    }
+
+    /* the graph panel — where the roots lead; the whole panel is the click */
+    .dt-kg{position:relative;display:block;border:1px solid var(--moss-dim);border-radius:14px;
+      background:linear-gradient(170deg,#101018,#0d1310 80%);overflow:hidden;
+      padding:56px 48px;margin:0 auto;max-width:996px;
+      box-shadow:0 24px 70px rgba(0,0,0,.5), inset 0 0 90px rgba(63,174,116,.05);
+      transition:border-color .2s, box-shadow .2s;}
+    .dt-kg:hover{text-decoration:none;border-color:var(--gold);
+      box-shadow:0 24px 70px rgba(0,0,0,.55), 0 0 44px rgba(224,179,78,.13);}
+    .dt-kg canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;}
+    .dt-kg .kg-body{position:relative;max-width:30rem;}
+    .dt-kg h2{margin-bottom:10px;}
+    .dt-kg .kg-line{color:var(--parchment);font-size:1.02rem;margin:0 0 22px;}
+    .dt-stats{display:flex;gap:34px;flex-wrap:wrap;margin:0 0 26px;}
+    .dt-stat b{display:block;font-family:'Courier New',monospace;font-weight:bold;
+      font-size:1.5rem;color:var(--parchment);}
+    .dt-stat span{font-family:'Courier New',monospace;font-size:.66rem;letter-spacing:1.5px;
+      text-transform:uppercase;color:var(--parchment-dim);}
+    .kg-cta{display:inline-block;font-family:'Courier New',monospace;font-size:.85rem;
+      letter-spacing:1px;color:var(--gold);border:1px solid var(--gold);border-radius:99px;padding:9px 20px;}
+    .dt-kg:hover .kg-cta{background:var(--gold);color:var(--obsidian);}
+
+    /* selected work + stack strip + closer */
+    .dt-work{padding:76px 0 64px;}
+    .dt-more{text-align:center;margin:34px 0 0;font-family:'Courier New',monospace;letter-spacing:1px;}
+    .dt-stack{position:relative;border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+      background:#0e0e15 url('/stack/system-map.svg') center/cover no-repeat;}
+    .dt-stack::before{content:"";position:absolute;inset:0;
+      background:linear-gradient(90deg, rgba(14,14,21,.97) 34%, rgba(14,14,21,.72));}
+    .dt-stack .wrap{position:relative;padding-top:64px;padding-bottom:64px;}
+    .dt-stack p{color:var(--parchment-dim);max-width:46ch;margin:0 0 22px;}
+    .dt-close{text-align:center;padding:78px 22px 70px;}
+    .dt-close p{color:var(--parchment-dim);max-width:44ch;margin:0 auto 26px;}
+    .dt-about{padding:72px 0;}
+
+    @media(max-width:640px){
+      .dt-hero{padding-top:48px;}
+      .dt-roots{height:120px;margin-bottom:-34px;}
+      .dt-kg{padding:40px 24px;margin:0 14px;}
+      .dt-stats{gap:22px;}
+    }
+  </style>
 </head>
 <body>
-  <div class="gb-stage">
-    <div class="gb">
-      <div class="gb-top">
-        <span class="gb-led"></span> Power · Port Foliopolis
-        <span class="grille"><i></i><i></i><i></i><i></i><i></i></span>
-      </div>
-      <div class="gb-screen-frame">
-        <div id="game"></div>
-      </div>
-      <div class="gb-brand">b<b>long</b>.dev</div>
-      <div class="gb-controls">
-        <div class="gb-dpad">
-          <div class="bar h"></div><div class="bar v"></div>
-          <button class="d-up" aria-label="up">▲</button>
-          <button class="d-down" aria-label="down">▼</button>
-          <button class="d-left" data-pad="left" aria-label="move left">◀</button>
-          <button class="d-right" data-pad="right" aria-label="move right">▶</button>
-        </div>
-        <div class="gb-buttons">
-          <button class="gb-btn s" data-pad="talk" aria-label="speak">S</button>
-          <button class="gb-btn j" data-pad="jump" aria-label="jump">J</button>
-          <button class="gb-btn a" data-pad="attack" aria-label="attack">A</button>
-        </div>
-      </div>
-    </div>
-    <p class="gb-hint">
-      <span class="hint-key">← → move · space jump · A attack · S talk</span>
-      <span class="hint-touch">← → move · J jump · A attack · S talk &nbsp;·&nbsp; or tap the buttons</span>
-      &nbsp;·&nbsp; <a class="src" href="https://github.com/blong-dev/blong.dev" target="_blank" rel="noopener">source ↗</a></p>
-  </div>
+  <main class="lander">
 
-  <script src="/sprites.js"></script>
-  <script src="/chat.js"></script>
-  <script src="/game.js"></script>
+    <!-- ═══ hero — the canopy ═══ -->
+    <section class="dt-hero">
+      <div class="wrap">
+        <p class="dt-eyebrow">Braedon Long · founder &amp; steward</p>
+        <h1>Turning tech into <em>tools</em></h1>
+        <p class="dt-sub">I designed and built everything on this page, and I run it myself, from the data layer up to the thing you click. Start with the knowledge graph below.</p>
+        <div class="dt-ctas">
+          <a class="btn-root" href="/demos/powergraph">Explore the graph →</a>
+          <a class="btn-ghost" href="#work">See the work ↓</a>
+        </div>
+      </div>
+
+      <!-- the roots: gold canopy fading to living green, ending at the graph -->
+      <svg class="dt-roots" viewBox="0 0 1200 200" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
+        <defs>
+          <linearGradient id="rootGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#e0b34e" stop-opacity=".9"/>
+            <stop offset="1" stop-color="#3fae74" stop-opacity=".8"/>
+          </linearGradient>
+        </defs>
+        <path pathLength="1" d="M480,0 C480,60 560,80 470,110 C380,140 330,160 300,196"/>
+        <path pathLength="1" d="M480,0 C480,55 585,95 545,130 C505,165 480,175 460,196"/>
+        <path pathLength="1" d="M480,0 C480,70 610,110 640,145 C670,180 690,188 700,196"/>
+        <path pathLength="1" d="M480,0 C480,50 640,85 720,115 C800,145 850,170 880,196"/>
+        <path pathLength="1" d="M480,0 C480,40 540,60 430,80 C320,100 240,150 210,196"/>
+        <path pathLength="1" d="M480,0 C480,45 660,70 780,90 C900,110 960,155 990,196"/>
+        <path pathLength="1" d="M480,0 C480,80 598,140 590,196"/>
+        <circle cx="300" cy="196" r="2.5"/><circle cx="460" cy="196" r="2"/>
+        <circle cx="590" cy="196" r="2.5"/><circle cx="700" cy="196" r="2"/>
+        <circle cx="880" cy="196" r="2.5"/><circle cx="990" cy="196" r="2"/>
+        <circle cx="210" cy="196" r="2"/>
+      </svg>
+    </section>
+
+    <!-- ═══ the graph — where the roots lead; one big click ═══ -->
+    <section>
+      <a class="dt-kg" href="/demos/powergraph" aria-label="Explore the World Power Graph demo">
+        <canvas id="kgc" aria-hidden="true"></canvas>
+        <div class="kg-body">
+          <h2>The Knowledge Graph</h2>
+          <p class="kg-line">A live slice of a knowledge graph I built from 22 million public-data nodes. Drag it, search it, click anything that catches your eye.</p>
+          <div class="dt-stats">
+            <div class="dt-stat"><b>22M</b><span>entities</span></div>
+            <div class="dt-stat"><b>706</b><span>in this view</span></div>
+            <div class="dt-stat"><b>6,076</b><span>connections</span></div>
+          </div>
+          <span class="kg-cta">Open the graph →</span>
+        </div>
+      </a>
+    </section>
+
+    <!-- ═══ selected work ═══ -->
+    <section class="dt-work" id="work">
+      <div class="wrap">
+        <h2>Selected Work</h2>
+        <div class="tiles">
+          <a class="tile" href="https://dreamtree.org" target="_blank" rel="noopener">
+            <div class="shot" style="background:url('/assets/portfolio/dreamtree-acorn.svg') no-repeat center/auto 52%, radial-gradient(circle at 50% 42%, rgba(125,148,113,.16), transparent 62%), #10140b"></div>
+            <div class="body"><div class="name">dreamtree</div>
+              <div class="one">Data sovereignty. The mission under everything else here.</div></div>
+          </a>
+          <a class="tile" href="/projects/tail-atlas">
+            <div class="shot" style="background-image:url('/assets/portfolio/tailatlas.jpg')"></div>
+            <div class="body"><div class="name">Tail Atlas</div>
+              <div class="one">One clean picture of the world fleet, from sources that all disagree.</div></div>
+          </a>
+          <a class="tile" href="/projects/hometownwire">
+            <div class="shot" style="background-image:url('/assets/portfolio/hometownwire.jpg')"></div>
+            <div class="body"><div class="name">HometownWire</div>
+              <div class="one">Turning the public record into something you can actually search.</div></div>
+          </a>
+          <a class="tile" href="/projects/telekora">
+            <div class="shot" style="background-image:url('/assets/portfolio/telekora.jpg')"></div>
+            <div class="body"><div class="name">Telekora</div>
+              <div class="one">Generate a whole course — slides, images, quizzes — from a prompt.</div></div>
+          </a>
+          <a class="tile" href="/projects/gnosis">
+            <div class="shot" style="background-image:url('/assets/portfolio/feed.jpg')"></div>
+            <div class="body"><div class="name">Gnosis</div>
+              <div class="one">The private, event-driven AI platform behind everything else here.</div></div>
+          </a>
+          <a class="tile" href="/demos/port-foliopolis">
+            <div class="shot" style="background-image:url('/assets/portfolio/portfoliopolis.jpg')"></div>
+            <div class="body"><div class="name">Port Foliopolis</div>
+              <div class="one">A playable RPG where the NPCs are live LLMs.</div></div>
+          </a>
+        </div>
+        <p class="dt-more"><a href="/portfolio">full portfolio →</a></p>
+      </div>
+    </section>
+
+    <!-- ═══ the stack — map teaser ═══ -->
+    <section class="dt-stack">
+      <div class="wrap">
+        <h2>The Stack</h2>
+        <p>It all runs on one platform I built. Every action is logged and can be replayed, and most of the intelligence runs locally, on hardware in my house. Walk the map to see how the pieces fit.</p>
+        <a class="btn-ghost" href="/stack">Walk the map →</a>
+      </div>
+    </section>
+
+    <!-- ═══ about — his voice, at the bottom ═══ -->
+    <section class="dt-about">
+      <div class="wrap">
+        <h2>About</h2>
+        <div class="about-grid">
+          <img src="/assets/portfolio/braedon.jpg" alt="Braedon Long">
+          <div>
+            <p>I'm B Long, and I rock some crafty combination of adjectives that make you tingle with curiosity, marvel with wonder, and stink of possibility. I'm a real systems thinker from physics right on through to philosophy. I taught myself to code, then wrote every line of my own LLMs for my master's, after years in politics and teaching.</p>
+            <p>Now I'm a serial technical co-founder who moonlights helping small businesses dig out of tech hell. If you need it, I can build it. Yeah, AI helps, but you gotta know how to use it.</p>
+            <p>My big mission is data sovereignty. That's <a href="https://dreamtree.org" target="_blank" rel="noopener">dreamtree</a>. But I'm just out here, doin' it live like Bill O.</p>
+            <p class="creed">Fight with tools.<span>— Flobots</span></p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ═══ closer ═══ -->
+    <section class="dt-close">
+      <h2>Get in touch</h2>
+      <p>I build systems people actually own, made to last. If you're building something ambitious and short a builder, email me.</p>
+      <a class="btn-root" href="mailto:b@blong.dev">b@blong.dev</a>
+    </section>
+
+  </main>
+
+  <script>
+    // Constellation drift inside the graph panel — a taste of the KG before the click.
+    (function () {
+      const cv = document.getElementById('kgc'), cx = cv.getContext('2d');
+      const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const COLORS = ['#e0b34e', '#3fae74', '#e9dfc6', '#3f78d8'];
+      let W, H, pts = [];
+      function size() {
+        const r = cv.parentElement.getBoundingClientRect();
+        W = cv.width = r.width * devicePixelRatio; H = cv.height = r.height * devicePixelRatio;
+        const n = Math.min(70, Math.floor(r.width / 14));
+        pts = Array.from({ length: n }, () => ({
+          x: Math.random() * W, y: Math.random() * H,
+          vx: (Math.random() - .5) * .12 * devicePixelRatio, vy: (Math.random() - .5) * .12 * devicePixelRatio,
+          r: (Math.random() * 1.4 + .7) * devicePixelRatio, c: COLORS[Math.random() * COLORS.length | 0],
+        }));
+      }
+      function frame() {
+        cx.clearRect(0, 0, W, H);
+        const link = 110 * devicePixelRatio;
+        for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) {
+          const a = pts[i], b = pts[j], d = Math.hypot(a.x - b.x, a.y - b.y);
+          if (d < link) {
+            cx.strokeStyle = 'rgba(233,223,198,' + (0.10 * (1 - d / link)).toFixed(3) + ')';
+            cx.lineWidth = devicePixelRatio * .6;
+            cx.beginPath(); cx.moveTo(a.x, a.y); cx.lineTo(b.x, b.y); cx.stroke();
+          }
+        }
+        for (const p of pts) {
+          p.x = (p.x + p.vx + W) % W; p.y = (p.y + p.vy + H) % H;
+          cx.globalAlpha = .8; cx.fillStyle = p.c;
+          cx.beginPath(); cx.arc(p.x, p.y, p.r, 0, 7); cx.fill(); cx.globalAlpha = 1;
+        }
+        if (!still) requestAnimationFrame(frame);
+      }
+      size(); frame();
+      addEventListener('resize', () => { size(); if (still) frame(); });
+    })();
+  </script>
 </body>
 </html>

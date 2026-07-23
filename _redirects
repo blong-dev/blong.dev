@@ -2,3 +2,8 @@
 # (They're also gitignored + excluded from deploys; this stops any cached/re-cached copy.)
 /portfolio.md    /    301
 /dossiers/*      /    301
+# .dev.vars must live in the deploy dir for `wrangler pages dev`, so hard-block it at the edge.
+/.dev.vars       /    301
+/chat.log        /    301
+# bio/ holds private research + interview prep — block it until it's meant to be public.
+/bio/*           /    301

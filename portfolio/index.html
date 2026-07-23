@@ -193,7 +193,12 @@
             <div class="body">
               <div class="name">dreamtree <span class="badge flight">in&nbsp;flight</span></div>
               <div class="one">A public ledger where every person, agent, and thing owns proof of what it creates.</div>
-              <div class="card-cue">visit</div>
+              <div class="card-cue">case study</div>
+              <div class="case-body" hidden>
+                <p><b>What it does</b> A public ledger where every person, organization, agent, or thing holds the permanent, verifiable record of what it creates. Your data is already yours; dreamtree is how you prove it — with no company in the middle who can revoke it.</p>
+                <p><b>The infrastructure flex</b> An L1 on Cosmos SDK + CometBFT with a novel <strong>attestation-as-work</strong> consensus: the network settles records by attesting to them, weighted by a reputation signal with asymmetric decay so bad actors fade and good ones compound. Records carry W3C signatures (eddsa-jcs-2022) and did:webvh identity, so they <strong>verify anywhere</strong>, not only inside dreamtree.</p>
+                <p><b>The build</b> Designed and built the whole stack solo — the chain modules (seeds, photons, attestation, reputation, licensing), the off-chain anchoring service, and roots, the wallet at the human edge. Running on private infrastructure.</p>
+              </div>
             </div>
           </div>
           <div class="tile" data-link="https://id.dreamtree.org">
@@ -201,7 +206,12 @@
             <div class="body">
               <div class="name">roots <span class="badge flight">in&nbsp;flight</span></div>
               <div class="one">Hold your identity and credentials, and prove them to anyone — no company in the middle.</div>
-              <div class="card-cue">visit</div>
+              <div class="card-cue">case study</div>
+              <div class="case-body" hidden>
+                <p><b>What it does</b> The wallet at the human edge of dreamtree: where a person or organization holds their identity and the verifiable credentials others issue them, and can prove any of it to anyone — <strong>without the issuer in the loop</strong>.</p>
+                <p><b>The infrastructure flex</b> A Cloudflare Workers + D1 service that issues W3C Verifiable Credentials with real Data Integrity proofs (eddsa-jcs-2022), serves did:web / did:webvh documents, and gates every read behind consent with a full audit trail. Every record anchors to the dreamtree chain for tamper-evidence.</p>
+                <p><b>The agent angle</b> An MCP endpoint lets agents verify credentials too, and it implements the CAWG identity-claims-aggregation profile — the credentials that ride inside C2PA content provenance.</p>
+              </div>
             </div>
           </div>
         </div>

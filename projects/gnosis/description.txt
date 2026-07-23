@@ -1,0 +1,10 @@
+Gnosis — private, event-driven AI platform
+Founder & Principal Architect
+
+Designed and operate a full AI platform end to end on two consumer machines: a 16-partition Redpanda event bus where every action is an auditable event, three Go services (gateway, inference router, bus), local-first inference (Qwen 9B and 27B alongside frontier Claude), a Neo4j knowledge graph and Postgres + pgvector warehouse, and a roster of autonomous agents.
+
+Every LLM call has a non-LLM heuristic fallback, so the system degrades, never stops. Around 2,200 automated tests; 147 data-source adapters; ~84 gateway routes; 62 typed event classes that are the wire contract.
+
+Skills: AI infrastructure, AI agents, event-driven architecture, Go, Python, Redpanda/Kafka, Neo4j, PostgreSQL, LLM inference, distributed systems.
+
+Link: https://blong.dev/stack

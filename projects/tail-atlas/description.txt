@@ -1,0 +1,10 @@
+Tail Atlas — global general-aviation fleet intelligence
+Founder & Principal Architect
+
+Fused contradictory national aviation registries (FAA, EASA, and more) into one canonical, deduplicated, classified fleet — 710,000 aircraft and 313,000 owners served from the edge.
+
+Built the entity-resolution engine (multi-tier identity matching, source-priority merge, SCD2 history) with a strict "blank > wrong" discipline. A Python and Redpanda ingest pipeline lands records to Postgres; a curated slice serves from Cloudflare Workers, D1, and R2 behind a React + Hono app. 435 automated tests covering normalizers, dedup, and fleet intelligence.
+
+Skills: data engineering, entity resolution, Python, PostgreSQL, Cloudflare Workers, TypeScript, Redpanda/Kafka.
+
+Link: https://tailatlas.com

@@ -1,0 +1,10 @@
+Port Foliopolis — playable LLM-NPC portfolio
+Author
+
+The front door of blong.dev rendered as a Phaser retro RPG where the NPCs are live LLMs (Gemini and Groq behind a Cloudflare Pages Function).
+
+A fail-closed cost guard makes a public LLM toy that structurally cannot run up a bill: per-IP and global KV-backed daily caps, free-tier provider keys with no billing attached, a kill switch that fails closed, optional Cloudflare AI Gateway routing, and counters that bump only on success. Built in roughly a weekend; it's a sample of the velocity, not the headline.
+
+Skills: JavaScript, Phaser, Cloudflare Pages Functions, LLM applications, edge computing.
+
+Link: https://blong.dev

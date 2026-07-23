@@ -1,0 +1,14 @@
+World Power Graph — public-data knowledge graph
+Founder & Principal Architect
+
+A knowledge graph stitching FEC, EDGAR, USASpending, Congress, court records, IRS Form 990, civic platforms, and more into one queryable graph of people, organizations, money flows, and provenance — 23.2 million nodes and 25.6 million relationships across a 64 GB Neo4j store, all public sources.
+
+The hard problem isn't volume; it's making sources that disagree on everything (names, IDs, dates, role titles) resolve to the same canonical entity. Built a multi-tier entity-resolution pipeline (external ID, exact, normalized name, LLM-assisted, Levenshtein) with entity-aware partition keys that route every event for one entity to one consumer, so four parallel knowledge agents can MERGE into Neo4j without lock-free races.
+
+Relationship discovery rides the bus: a typed RelationshipDiscoveryEvent fires when an agent finds a connection, the knowledge agent writes the edge to Neo4j, and a result adapter auto-extracts relationships from any agent output without explicit integration. The whole graph is queryable through the same Go gateway that fronts the rest of the platform; it shows up as one region of blong.dev/stack.
+
+Stack: Neo4j 5.26, Postgres 16 + pgvector warehouse, Python knowledge agents (4 replicas), Redpanda event bus, Go gateway.
+
+Skills: knowledge graphs, Neo4j, graph databases, entity resolution, data engineering, Python, distributed systems, event-driven architecture.
+
+Link: https://blong.dev/stack

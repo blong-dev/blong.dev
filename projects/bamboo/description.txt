@@ -1,0 +1,10 @@
+Bamboo — custom multi-agent orchestration harness
+Founder & Principal Architect
+
+Built a bus-native, auditable agent runtime that orchestrates around 20 containerized agents: a chief-of-staff (Cosmo), an orchestrator and triage layer (Orca), persistent workers (Eagle), ephemeral workers (Coder, Researcher, Executor, Consolidator, Lab Bot, Seed Researcher), and an SRE sidecar (Sentinel).
+
+A new agent is one YAML manifest plus one markdown prompt. The manifest is a role contract — allowed tools, model tier, iteration and token ceilings, escalation rules — and the harness enforces those bounds at dispatch, not by prompt instruction. The prompt declares a Pydantic output schema; every reply is parsed against it before Python writes anything to a database, so LLMs never perform writes — they emit structured JSON the harness audits. Tools are exposed as MCP servers and granted per role. Each agent ships as its own Docker container under docker-compose and hot-swaps between local Qwen and frontier Claude with a single config line. No agent calls another directly: every decision is a logged, replayable event on the Redpanda bus.
+
+Skills: AI agents, agent orchestration, LLM orchestration, Pydantic AI, Claude Agent SDK, MCP, structured output, Docker, Python, event-driven architecture.
+
+Link: https://blong.dev/stack

@@ -1,0 +1,10 @@
+Telekora — multi-tenant B2B learning platform
+Founder & Principal Architect
+
+Edge-native multi-tenant SaaS (Hono on Cloudflare Workers + D1, R2, KV) that generates full courses from a prompt — slides, images, and quizzes.
+
+Per-tenant LLM keys are envelope-encrypted under one operator key (Cloudflare Secrets Store + WebCrypto AES-GCM); course generation is forced through a tool-call schema (Zod-validated) so the output is always valid and the model can't invent image URLs. Stripe billing, Google auth, installable PWA, and a Telegram Mini App front end.
+
+Skills: multi-tenant SaaS, LLM applications, TypeScript, Cloudflare Workers, Stripe, React, Hono.
+
+Link: https://telekora.com

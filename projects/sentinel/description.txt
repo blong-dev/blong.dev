@@ -1,0 +1,16 @@
+Sentinel — observability + SRE platform for an agent fleet
+Founder & Principal Architect
+
+Python service that watches everything else and writes work back into the same lane the agents use.
+
+Active probes on a cron: nmap subnet sweep with new-device detection (vendor lookup, open-port profile, known/unknown tagging), host audit (firewall state, listening-port allowlist, Docker roster), web and TLS-cert checks, a CVE scan, a shard-aware container watchdog that understands docker-compose's "-N" suffixes (gnosis-agent-warehouse-1/2/3/4), and a Keycloak login-error scanner that tails the container's logs and classifies each LOGIN_ERROR as a real client failure or a public-endpoint probe so probe noise doesn't drown signal.
+
+Passive observation on the Redpanda bus: agent status / result / outcome, QA reports, escalations, prompt-injection events, cron outcomes, container crashes, and a wildcard subscription across all 147 ingest adapters for silent-failure detection on connectors.
+
+Per-minute metric collectors for machine (CPU, memory, disk, per-GPU), Redpanda consumer lag, per-model LLM inference, Postgres, and Neo4j (heap, transactions, store size, node and edge counts via apoc.meta.stats and gds.debug.sysInfo). The Neo4j sample is where the World Power Graph counts in this profile come from.
+
+Findings deduplicate by self-touching last_detected so "still happening" doesn't re-emit, then publish as typed cards onto the Gnosis bus (severity-graded) or alert via SMTP. A FastAPI dashboard fronts ~20 read endpoints — devices, findings, agents, sources, anomalies, knowledge-graph, thermals, prompt injections, plus the metric series.
+
+Skills: observability, SRE, Python, FastAPI, asyncpg, Postgres, Redpanda/Kafka, nmap, Docker, systemd, monitoring, alerting.
+
+Link: https://blong.dev/stack

@@ -1,0 +1,14 @@
+HometownWire — civic intelligence platform
+Co-founder & Principal Architect
+
+Turns the public record of sub-state government — city councils, school boards, planning and zoning commissions, special districts — into a structured, queryable, cross-meeting corpus with provenance back to the original artifact.
+
+The hard problem isn't volume; it's sourcing and structuring scattered, inconsistent civic data. Built a speaker-labeled transcript reconstruction pipeline that parses Archive.org SRT captions (where the speaker tag is inline and carries forward across cues) into a searchable turn-by-turn record, with timestamps for jump-to-time.
+
+Architectural restraint is the headline move: HometownWire rides the existing Gnosis platform as a configuration plus a bus consumer rather than a separate stack. Civic data lands through the same warehouse and knowledge graph via additive handlers, so a new region needs YAML, not code. Currently 1,580 public bodies in the registry; 24 source adapter configs across Granicus/Legistar, Archive.org/CitiCable, BoardDocs, JS-rendered OpenCities, YouTube captions, IRS Form 990, and Socrata open-data feeds.
+
+A React + Vite + Hono read surface on Cloudflare Workers serves the corpus from D1 with FTS5 search; the ingest is Python 3.12 (asyncpg, httpx, confluent_kafka).
+
+Skills: data engineering, civic data, NLP, edge computing, multi-tenant data pipelines, TypeScript, React, Python, Cloudflare Workers, Redpanda/Kafka.
+
+Link: https://hometownwire.com

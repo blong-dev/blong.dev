@@ -1,0 +1,12 @@
+Scout — vertical-targeted business research with outreach
+Founder & Principal Architect
+
+Pick a vertical and a city; Scout continuously researches and builds dossiers on every matching business — a structured, versioned profile per company with citations back to source — then turns approved dossiers into customer-drafted outreach launched through the user's own SMTP.
+
+Surface: a six-step onboarding wizard configures the org, then campaigns are (vertical × city) pairs. The Eagle agent drafts outreach against each dossier; messages move through an explicit state machine (drafted → approved → sent → followup_1 → followup_2 → replied | skipped) with server-side filtering. Mail goes out over the customer's own SMTP creds — envelope-encrypted at rest with AES-256-GCM under a Wrangler-secret KEK — so Scout never owns sending reputation.
+
+Architecture: one Cloudflare Worker serves a Hono API and a React SPA from a single deploy, fronted by Keycloak (Auth-Code + PKCE), backed by edge-local D1 — pulling the canonical company and dossier corpus from the Gnosis platform through an authenticated Go gateway ("push-to-cache"). Two auth planes: a user JWT pinning org_id for the SPA, and an X-Internal-Secret + X-Org-Id plane for the Eagle agent calling the same surface. Multi-tenancy is enforced at the gateway, not in prompts — companies and dossiers are global and versioned so research amortizes across tenants (the "data flywheel"), while campaigns, leads, emails, and SMTP creds are strictly per-org. D1 is the edge-local cache; Postgres is source of truth behind 18 /scout/* gateway handlers. Writes dual-write D1 → waitUntil → PG sync; agent dispatch is fire-and-forget. ~7,000 LOC end-to-end. Live at scout.blong.dev.
+
+Skills: multi-tenant SaaS, agent-driven research, structured outreach, TypeScript, React, Hono, Cloudflare Workers, D1, Keycloak/OIDC, Go gateways, LLM applications, AES-256-GCM envelope encryption.
+
+Link: https://scout.blong.dev

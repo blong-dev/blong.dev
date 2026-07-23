@@ -25,11 +25,11 @@ window.SYS = {
     { id:"braedon", r:"surf", ext:true, label:"Braedon", detail:"operator", spec:"Sole operator / architect — sets direction; the platform runs the loop." },
     { id:"users",   r:"prod", ext:true, label:"Users / prospects", detail:"use the products", spec:"Prospective users of the public product surfaces." },
     { id:"sources", r:"ing",  ext:true, label:"Public data sources", detail:"FEC · EDGAR · USASpending · Congress · registries · civic", spec:"The public record: FEC, EDGAR, USASpending, Congress, ~25 aviation registries, civic platforms." },
-    { id:"claude",  r:"inf",  ext:true, label:"Anthropic Claude", detail:"Opus 4.7 · flat-rate sub", spec:"Frontier inference on a flat-rate subscription — the hard ~5%: coding and top-level orchestration. External / cloud, not local." },
+    { id:"claude",  r:"inf",  ext:true, label:"Anthropic Claude", detail:"Opus 4.8 · API", spec:"Frontier inference via the Anthropic API — the hard ~5%: coding and top-level orchestration. External / cloud, not local." },
     { id:"cloudflare", r:"prod", ext:true, label:"Cloudflare edge", detail:"Workers · D1 · R2 · KV · Tunnel", spec:"The edge platform the product surfaces run on; a Tunnel exposes the operator dashboard." },
 
     // ── Ingestion ──
-    { id:"ingest", r:"ing", label:"Ingest adapters", detail:"147 source configs", spec:"147 source configs pull the public record on cron — per-source quotas, circuit breakers, cursor backfill — and publish one typed IngestRecord per pull to the bus." },
+    { id:"ingest", r:"ing", label:"Ingest adapters", detail:"113 source configs", spec:"113 source configs pull the public record on cron — per-source quotas, circuit breakers, cursor backfill — and publish one typed IngestRecord per pull to the bus." },
 
     // ── Pipeline agents (consume the bus) ──
     { id:"knowledge", r:"pipe", label:"knowledge ×4", detail:"entity resolution", spec:"Four replicas resolve entities (5-tier) and MERGE them into the knowledge graph; entity-aware partitioning prevents MERGE races." },
@@ -48,7 +48,7 @@ window.SYS = {
     { id:"scoutc",    r:"pipe", label:"scout-consumer", detail:"Scout SaaS events", spec:"Ingests Scout SaaS events back into the platform." },
 
     // ── AI Workforce (Bamboo harness) ──
-    { id:"cosmo", r:"wf", label:"Cosmo", detail:"chief of staff · Claude", spec:"Persistent chief-of-staff on Claude Opus 4.7. Manages your attention, delegates work as cards, owns the board, holds core + procedural memory across restarts (~38 tools). The judgment seat." },
+    { id:"cosmo", r:"wf", label:"Cosmo", detail:"chief of staff · Claude", spec:"Persistent chief-of-staff on Claude Opus 4.8. Manages your attention, delegates work as cards, owns the board, holds core + procedural memory across restarts (~38 tools). The judgment seat." },
     { id:"orca",  r:"wf", label:"Orca", detail:"orchestrator/triage · 27B", spec:"Always-on local-27B triage between the bus and Cosmo (escalate/answer/buffer/drop). Scores proposals deterministically and dispatches cards. Fail-safe: rate-capped, deduped, escalations never dropped." },
     { id:"eagle", r:"wf", label:"Eagle", detail:"sales engine", spec:"Sales-intelligence engine — frontier (Agent SDK) for the owner org, local 27B for client orgs. Returns structured JSON; code does the writes." },
     { id:"dispatcher", r:"wf", label:"dispatcher", detail:"spawns workers", spec:"Spawns one ephemeral worker container per card (docker run --rm) with hard timeouts, memory limits and scoped permissions." },
@@ -81,10 +81,10 @@ window.SYS = {
     // ── Products ──
     { id:"tailatlas", r:"prod", label:"Tail Atlas", detail:"GA fleet intelligence", spec:"Global GA fleet intelligence — 710K aircraft + 313K owners reconciled from ~25 registries. React + Hono on Cloudflare, D1 + R2." },
     { id:"telekora", r:"prod", label:"Telekora", detail:"B2B LMS", spec:"Multi-tenant B2B LMS — bring-your-own-LLM course generation (per-tenant keys envelope-encrypted), Stripe, Telegram. telekora.com." },
-    { id:"hometownwire", r:"prod", label:"HometownWire", detail:"civic intelligence", spec:"Civic intelligence — public-meeting corpus made searchable; lands through the same gnosis pipeline as everything else." },
+    { id:"hometownwire", r:"prod", label:"HometownWire", detail:"civic intelligence", spec:"Civic intelligence — speaker-labeled meeting transcripts, people and company dossiers, procurement records, and speaker-aware claim search, all made searchable. Lands through the same gnosis pipeline as everything else." },
     { id:"scout", r:"prod", label:"Scout", detail:"B2B sales intel", spec:"B2B sales-intelligence SaaS surface (Hono + React + D1 on Workers) — the public face of the Eagle engine." },
     { id:"portf", r:"prod", label:"Port Foliopolis", detail:"this site", spec:"This site — a Phaser game with LLM-driven NPCs on free-tier models behind a fail-closed cost guard." },
-    { id:"dreamtree", r:"prod", label:"DreamTree", detail:"data sovereignty", spec:"A data-sovereignty project. Kept intentionally vague for now." },
+    { id:"dreamtree", r:"prod", label:"DreamTree", detail:"data sovereignty", spec:"Data sovereignty — a user-owned, append-only record of what you contribute and what it comes to be worth. The mission the rest of the platform feeds; live at dreamtree.org." },
   ],
 
   edges: [

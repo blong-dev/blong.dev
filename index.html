@@ -16,10 +16,12 @@
     :root{ --moss:#3fae74; --moss-dim:#2c7a53; }
     main.lander{max-width:none;padding:0;}
     .lander section{border-bottom:none;padding:0;}
-    .wrap{max-width:1040px;margin:0 auto;padding:0 22px;}
+    .wrap{max-width:1280px;margin:0 auto;padding:0 clamp(22px,4.5vw,64px);}
 
     /* hero — canopy. Copy lives here; the roots pull the eye down into the graph. */
-    .dt-hero{position:relative;padding:72px 0 0;overflow:hidden;}
+    .dt-hero{position:relative;padding:56px 0 0;overflow:hidden;}
+    .dt-hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:clamp(32px,4vw,64px);align-items:center;padding:44px 0 6px;}
+    .dt-hero-copy{min-width:0;}
     .dt-hero::before{content:"";position:absolute;inset:0;pointer-events:none;
       background:
         radial-gradient(52% 42% at 18% 12%, rgba(224,179,78,.10), transparent 70%),
@@ -27,8 +29,8 @@
     .dt-eyebrow{font-family:'Courier New',monospace;font-size:.74rem;letter-spacing:3px;
       text-transform:uppercase;color:var(--gold);margin:0 0 18px;}
     .dt-hero h1{font-family:Georgia,serif;font-style:italic;font-weight:normal;
-      font-size:clamp(2.1rem,5.6vw,3.9rem);line-height:1.12;letter-spacing:0;
-      text-transform:none;color:var(--parchment);margin:0 0 20px;max-width:17ch;}
+      font-size:clamp(2.4rem,4.4vw,4.3rem);line-height:1.1;letter-spacing:0;
+      text-transform:none;color:var(--parchment);margin:0 0 20px;max-width:15ch;}
     .dt-hero h1 em{font-style:italic;color:var(--gold);}
     .dt-sub{color:var(--parchment-dim);font-size:1.06rem;max-width:52ch;margin:0 0 30px;}
     .dt-ctas{display:flex;gap:14px;flex-wrap:wrap;align-items:center;margin-bottom:8px;}
@@ -43,7 +45,7 @@
     .btn-ghost:hover{text-decoration:none;border-color:var(--moss);color:var(--moss);}
 
     /* the roots — grow out of the hero, terminate in the graph panel */
-    .dt-roots{display:block;width:100%;height:200px;margin:-6px 0 -58px;pointer-events:none;}
+    .dt-roots{display:block;width:100%;height:128px;margin:4px 0 -18px;pointer-events:none;}
     .dt-roots path{fill:none;stroke:url(#rootGrad);stroke-width:1.6;stroke-linecap:round;
       stroke-dasharray:1;stroke-dashoffset:1;animation:grow 2.4s ease-out forwards;}
     .dt-roots path:nth-child(odd){animation-delay:.35s;}
@@ -59,7 +61,7 @@
     /* the graph panel — where the roots lead; the whole panel is the click */
     .dt-kg{position:relative;display:block;border:1px solid var(--moss-dim);border-radius:14px;
       background:linear-gradient(170deg,#101018,#0d1310 80%);overflow:hidden;
-      padding:56px 48px;margin:0 auto;max-width:996px;
+      padding:42px 40px;min-height:360px;
       box-shadow:0 24px 70px rgba(0,0,0,.5), inset 0 0 90px rgba(63,174,116,.05);
       transition:border-color .2s, box-shadow .2s;}
     .dt-kg:hover{text-decoration:none;border-color:var(--gold);
@@ -78,7 +80,8 @@
     .dt-kg:hover .kg-cta{background:var(--gold);color:var(--obsidian);}
 
     /* selected work + stack strip + closer */
-    .dt-work{padding:76px 0 64px;}
+    .dt-work{padding:44px 0 64px;}
+    .dt-work .tiles{grid-template-columns:repeat(3,minmax(0,1fr));}
     .dt-more{text-align:center;margin:34px 0 0;font-family:'Courier New',monospace;letter-spacing:1px;}
     .dt-stack{position:relative;border-top:1px solid var(--line);border-bottom:1px solid var(--line);
       background:#0e0e15 url('/stack/system-map.svg') center/cover no-repeat;}
@@ -90,30 +93,51 @@
     .dt-close p{color:var(--parchment-dim);max-width:44ch;margin:0 auto 26px;}
     .dt-about{padding:72px 0;}
 
+    @media(max-width:900px){
+      .dt-hero-grid{grid-template-columns:1fr;gap:26px;padding-top:36px;}
+      .dt-work .tiles{grid-template-columns:repeat(2,minmax(0,1fr));}
+    }
     @media(max-width:640px){
-      .dt-hero{padding-top:48px;}
-      .dt-roots{height:120px;margin-bottom:-34px;}
-      .dt-kg{padding:40px 24px;margin:0 14px;}
+      .dt-hero{padding-top:36px;}
+      .dt-roots{height:108px;margin:6px 0 -18px;}
+      .dt-kg{padding:30px 22px;min-height:0;}
       .dt-stats{gap:22px;}
+      .dt-work .tiles{grid-template-columns:1fr;}
     }
   </style>
 </head>
 <body>
   <main class="lander">
 
-    <!-- ═══ hero — the canopy ═══ -->
+    <!-- ═══ hero — copy left, the graph right ═══ -->
     <section class="dt-hero">
-      <div class="wrap">
-        <p class="dt-eyebrow">Braedon Long · founder &amp; steward</p>
-        <h1>Turning tech into <em>tools</em></h1>
-        <p class="dt-sub">I designed and built everything on this page, and I run it myself, from the data layer up to the thing you click. Start with the knowledge graph below.</p>
-        <div class="dt-ctas">
-          <a class="btn-root" href="/demos/powergraph">Explore the graph →</a>
-          <a class="btn-ghost" href="#work">See the work ↓</a>
+      <div class="wrap dt-hero-grid">
+        <div class="dt-hero-copy">
+          <p class="dt-eyebrow">Braedon Long · founder &amp; steward</p>
+          <h1>Turning tech into <em>tools</em></h1>
+          <p class="dt-sub">I designed and built everything on this page, and I run it myself, from the data layer up to the thing you click. Start with the knowledge graph.</p>
+          <div class="dt-ctas">
+            <a class="btn-root" href="/demos/powergraph">Explore the graph →</a>
+            <a class="btn-ghost" href="#work">See the work ↓</a>
+          </div>
         </div>
+
+        <a class="dt-kg" href="/demos/powergraph" aria-label="Explore the World Power Graph demo">
+          <canvas id="kgc" aria-hidden="true"></canvas>
+          <div class="kg-body">
+            <h2>The Knowledge Graph</h2>
+            <p class="kg-line">A live slice of a knowledge graph I built from 22 million public-data nodes. Drag it, search it, click anything that catches your eye.</p>
+            <div class="dt-stats">
+              <div class="dt-stat"><b>22M</b><span>entities</span></div>
+              <div class="dt-stat"><b>706</b><span>in this view</span></div>
+              <div class="dt-stat"><b>6,076</b><span>connections</span></div>
+            </div>
+            <span class="kg-cta">Open the graph →</span>
+          </div>
+        </a>
       </div>
 
-      <!-- the roots: gold canopy fading to living green, ending at the graph -->
+      <!-- roots: gold canopy fading to green, growing down into the work -->
       <svg class="dt-roots" viewBox="0 0 1200 200" preserveAspectRatio="xMidYMax meet" aria-hidden="true">
         <defs>
           <linearGradient id="rootGrad" x1="0" y1="0" x2="0" y2="1">
@@ -121,35 +145,18 @@
             <stop offset="1" stop-color="#3fae74" stop-opacity=".8"/>
           </linearGradient>
         </defs>
-        <path pathLength="1" d="M480,0 C480,60 560,80 470,110 C380,140 330,160 300,196"/>
-        <path pathLength="1" d="M480,0 C480,55 585,95 545,130 C505,165 480,175 460,196"/>
-        <path pathLength="1" d="M480,0 C480,70 610,110 640,145 C670,180 690,188 700,196"/>
-        <path pathLength="1" d="M480,0 C480,50 640,85 720,115 C800,145 850,170 880,196"/>
-        <path pathLength="1" d="M480,0 C480,40 540,60 430,80 C320,100 240,150 210,196"/>
-        <path pathLength="1" d="M480,0 C480,45 660,70 780,90 C900,110 960,155 990,196"/>
-        <path pathLength="1" d="M480,0 C480,80 598,140 590,196"/>
-        <circle cx="300" cy="196" r="2.5"/><circle cx="460" cy="196" r="2"/>
-        <circle cx="590" cy="196" r="2.5"/><circle cx="700" cy="196" r="2"/>
-        <circle cx="880" cy="196" r="2.5"/><circle cx="990" cy="196" r="2"/>
+        <path pathLength="1" d="M600,0 C600,60 680,80 590,110 C500,140 450,160 420,196"/>
+        <path pathLength="1" d="M600,0 C600,55 705,95 665,130 C625,165 600,175 580,196"/>
+        <path pathLength="1" d="M600,0 C600,70 730,110 760,145 C790,180 810,188 820,196"/>
+        <path pathLength="1" d="M600,0 C600,50 760,85 840,115 C920,145 970,170 1000,196"/>
+        <path pathLength="1" d="M600,0 C600,40 660,60 550,80 C440,100 360,150 330,196"/>
+        <path pathLength="1" d="M600,0 C600,45 540,70 420,90 C300,110 240,155 210,196"/>
+        <path pathLength="1" d="M600,0 C600,80 598,140 600,196"/>
+        <circle cx="420" cy="196" r="2.5"/><circle cx="580" cy="196" r="2"/>
+        <circle cx="600" cy="196" r="2.5"/><circle cx="820" cy="196" r="2"/>
+        <circle cx="1000" cy="196" r="2.5"/><circle cx="330" cy="196" r="2"/>
         <circle cx="210" cy="196" r="2"/>
       </svg>
-    </section>
-
-    <!-- ═══ the graph — where the roots lead; one big click ═══ -->
-    <section>
-      <a class="dt-kg" href="/demos/powergraph" aria-label="Explore the World Power Graph demo">
-        <canvas id="kgc" aria-hidden="true"></canvas>
-        <div class="kg-body">
-          <h2>The Knowledge Graph</h2>
-          <p class="kg-line">A live slice of a knowledge graph I built from 22 million public-data nodes. Drag it, search it, click anything that catches your eye.</p>
-          <div class="dt-stats">
-            <div class="dt-stat"><b>22M</b><span>entities</span></div>
-            <div class="dt-stat"><b>706</b><span>in this view</span></div>
-            <div class="dt-stat"><b>6,076</b><span>connections</span></div>
-          </div>
-          <span class="kg-cta">Open the graph →</span>
-        </div>
-      </a>
     </section>
 
     <!-- ═══ selected work ═══ -->

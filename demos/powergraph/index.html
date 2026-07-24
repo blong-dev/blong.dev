@@ -4,49 +4,72 @@
   <meta charset="utf-8">
   <title>World Power Graph — blong.dev</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="description" content="An interactive slice of a public-data knowledge graph — 20,000 of the most-connected entities from money, lobbying, contracts, and the public record.">
+  <meta name="description" content="Navigate a public-data knowledge graph — click any entity to pull in who it funds, lobbies, controls, and contracts with. 20,000 of the most-connected entities.">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="icon" type="image/png" href="/favicon.png">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
   <meta name="theme-color" content="#0a0a0a">
   <link rel="stylesheet" href="/site.css">
   <script src="/site.js" defer></script>
-  <script src="https://cdn.jsdelivr.net/npm/graphology@0.25.4/dist/graphology.umd.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/sigma@2.4.0/build/sigma.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/force-graph@1"></script>
   <style>
     footer{display:none;}
     body{overflow:hidden;}
-    #pg-wrap{position:fixed;left:0;right:0;bottom:0;top:54px;background:#0c0c12;overflow:hidden;}
+    #pg-wrap{position:fixed;left:0;right:0;bottom:0;top:54px;background:#0b0b11;overflow:hidden;}
     #pg-graph{position:absolute;inset:0;}
-    #pg-wrap::after{content:"";position:absolute;inset:0;pointer-events:none;
-      box-shadow:inset 0 0 240px rgba(0,0,0,.6);}
     .pg-panel{position:absolute;z-index:5;font-family:'Courier New',monospace;color:var(--parchment);}
-    #pg-head{top:16px;left:18px;max-width:min(46ch,80vw);}
+    #pg-head{top:16px;left:18px;max-width:min(42ch,72vw);pointer-events:none;}
     #pg-head h1{font-size:1.05rem;letter-spacing:1px;color:var(--gold);margin:0 0 6px;text-transform:uppercase;}
-    #pg-head p{font-size:.78rem;line-height:1.5;color:var(--parchment-dim);margin:0;}
-    #pg-search{top:16px;right:18px;display:flex;gap:8px;align-items:center;}
-    #pg-search input{background:rgba(20,20,27,.9);border:1px solid var(--line);border-radius:99px;
-      color:var(--parchment);font-family:inherit;font-size:.82rem;padding:8px 15px;width:min(240px,52vw);outline:none;}
+    #pg-head p{font-size:.76rem;line-height:1.5;color:var(--parchment-dim);margin:0;}
+    #pg-search{top:16px;right:18px;}
+    #pg-search input{background:rgba(20,20,27,.92);border:1px solid var(--line);border-radius:99px;
+      color:var(--parchment);font-family:inherit;font-size:.82rem;padding:8px 15px;width:min(240px,50vw);outline:none;}
     #pg-search input:focus{border-color:var(--gold);}
-    #pg-legend{bottom:16px;left:18px;font-size:.68rem;color:var(--parchment-dim);line-height:1.7;
-      background:rgba(12,12,18,.72);border:1px solid var(--line);border-radius:8px;padding:9px 13px;}
-    #pg-legend b{color:var(--parchment);font-weight:normal;}
-    #pg-hint{bottom:16px;right:18px;font-size:.68rem;color:var(--parchment-dim);text-align:right;
-      background:rgba(12,12,18,.72);border:1px solid var(--line);border-radius:8px;padding:9px 13px;}
-    #pg-info{left:18px;top:74px;display:none;background:rgba(18,18,26,.94);border:1px solid var(--gold);
-      border-radius:9px;padding:13px 16px;max-width:300px;box-shadow:0 16px 40px rgba(0,0,0,.5);}
-    #pg-info.on{display:block;}
-    #pg-info .nm{color:var(--gold);font-size:.95rem;margin-bottom:5px;word-break:break-word;}
-    #pg-info .mt{color:var(--parchment-dim);font-size:.72rem;line-height:1.6;}
-    #pg-info .mt b{color:var(--parchment);font-weight:normal;}
+    #pg-hint{bottom:16px;left:18px;font-size:.68rem;color:var(--parchment-dim);line-height:1.6;
+      background:rgba(11,11,17,.72);border:1px solid var(--line);border-radius:8px;padding:9px 13px;}
+    #pg-hint b{color:var(--parchment);font-weight:normal;}
+    #pg-count{bottom:16px;right:18px;font-size:.68rem;color:var(--parchment-dim);
+      background:rgba(11,11,17,.72);border:1px solid var(--line);border-radius:8px;padding:9px 13px;}
+    #pg-count b{color:var(--gold);font-weight:normal;}
+
+    /* gnosis-style slide-in entity panel */
+    #pg-panel{top:0;right:0;height:100%;width:min(360px,86vw);background:rgba(15,15,21,.97);
+      border-left:1px solid var(--gold);box-shadow:-18px 0 50px rgba(0,0,0,.55);
+      transform:translateX(100%);transition:transform .32s cubic-bezier(.2,.8,.2,1);
+      overflow-y:auto;z-index:8;}
+    #pg-panel.on{transform:translateX(0);}
+    #pg-x{position:absolute;top:12px;right:14px;background:none;border:none;color:var(--parchment-dim);
+      font-size:24px;line-height:1;cursor:pointer;font-family:inherit;}
+    #pg-x:hover{color:var(--red);}
+    .pc{padding:26px 22px 40px;}
+    .pc .badge2{display:inline-block;font-size:.6rem;letter-spacing:1px;text-transform:uppercase;
+      color:#0b0b11;border-radius:99px;padding:2px 9px;font-weight:bold;}
+    .pc .ptype{color:var(--parchment-dim);font-size:.72rem;margin-left:8px;text-transform:uppercase;letter-spacing:1px;}
+    .pc h2{font-family:Georgia,serif;font-size:1.35rem;color:var(--parchment);margin:12px 0 0;line-height:1.2;word-break:break-word;}
+    .pc .metrics{display:flex;gap:26px;margin:18px 0 6px;border-top:1px solid var(--line);padding-top:16px;}
+    .pc .metrics b{display:block;font-size:1.15rem;color:var(--parchment);}
+    .pc .metrics span{font-size:.62rem;letter-spacing:1px;text-transform:uppercase;color:var(--parchment-dim);}
+    .pc .sect{margin-top:22px;}
+    .pc .sect-h{font-size:.66rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);margin-bottom:8px;}
+    .pc .rel-group{margin-bottom:12px;}
+    .pc .rel-lbl{font-size:.62rem;letter-spacing:.5px;text-transform:uppercase;color:var(--parchment-dim);
+      border-left:3px solid #444;padding-left:8px;margin-bottom:4px;}
+    .pc .flow{display:flex;align-items:center;gap:8px;width:100%;background:none;border:none;text-align:left;
+      color:var(--parchment);font-family:inherit;font-size:.8rem;padding:5px 6px;border-radius:5px;cursor:pointer;}
+    .pc .flow:hover{background:rgba(224,179,78,.10);}
+    .pc .flow .dot{width:8px;height:8px;border-radius:50%;flex:none;}
+    .pc .flow .fn{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .pc .flow .amt{color:#5ad07f;font-size:.72rem;}
+    .pc .more{font-size:.7rem;color:var(--parchment-dim);padding:3px 6px;}
+    .pc .expand-btn{margin-top:20px;width:100%;font-family:inherit;font-size:.8rem;letter-spacing:.5px;
+      color:var(--gold);background:none;border:1px solid var(--gold);border-radius:99px;padding:9px 0;cursor:pointer;}
+    .pc .expand-btn:hover{background:var(--gold);color:var(--obsidian);}
+
     #pg-status{position:absolute;inset:0;z-index:6;display:flex;align-items:center;justify-content:center;
       font-family:'Courier New',monospace;color:var(--parchment-dim);font-size:.9rem;letter-spacing:1px;
-      background:#0c0c12;text-align:center;padding:20px;}
+      background:#0b0b11;text-align:center;padding:20px;}
     #pg-status.gone{display:none;}
-    @media(max-width:620px){
-      #pg-head{max-width:70vw;} #pg-legend,#pg-hint{font-size:.62rem;}
-      #pg-search input{width:44vw;}
-    }
+    @media(max-width:620px){ #pg-head{max-width:64vw;} #pg-hint,#pg-count{font-size:.6rem;} }
   </style>
 </head>
 <body>
@@ -55,134 +78,201 @@
 
     <div id="pg-head" class="pg-panel">
       <h1>World Power Graph</h1>
-      <p>The 20,000 most-connected entities in a knowledge graph I built from the public record — campaign finance, lobbying, contracts, corporate filings. A slice of 27.7&nbsp;million.</p>
+      <p>The most-connected entities from a knowledge graph I built out of the public record. Click any node to pull in who it funds, lobbies, controls, and contracts with.</p>
     </div>
 
     <div id="pg-search" class="pg-panel">
       <input id="pg-q" type="search" placeholder="search an entity…" autocomplete="off" spellcheck="false">
     </div>
 
-    <div id="pg-info" class="pg-panel">
-      <div class="nm"></div>
-      <div class="mt"></div>
+    <div id="pg-hint" class="pg-panel">
+      <b>click</b> a node for details · <b>double-click</b> to expand<br><b>drag</b> to pan · <b>scroll</b> to zoom
     </div>
+    <div id="pg-count" class="pg-panel"><b id="pg-shown">0</b> shown · 20,000 in the graph</div>
 
-    <div id="pg-legend" class="pg-panel">
-      <div><b>size</b> = influence (PageRank)</div>
-      <div><b>color</b> = community cluster</div>
-      <div><b>20,000</b> nodes · <b id="pg-ec">—</b> connections</div>
-    </div>
-    <div id="pg-hint" class="pg-panel">drag to pan · scroll to zoom<br>hover to focus · search to find</div>
+    <aside id="pg-panel">
+      <button id="pg-x" aria-label="close">&times;</button>
+      <div class="pc" id="pg-pc"></div>
+    </aside>
 
     <div id="pg-status">loading the graph…</div>
   </div>
 
   <script>
   (function () {
-    var wrap = document.getElementById('pg-wrap');
     var statusEl = document.getElementById('pg-status');
-    // UMD builds expose namespaces, not the constructors directly — resolve both.
-    var GraphCtor = window.graphology && (window.graphology.Graph || window.graphology.default || window.graphology);
-    var SigmaCtor = window.Sigma && (window.Sigma.Sigma || window.Sigma.default || window.Sigma);
-    if (typeof GraphCtor !== 'function' || typeof SigmaCtor !== 'function') {
-      statusEl.textContent = 'could not load the graph libraries — try a refresh.'; return;
-    }
-
+    var wrap = document.getElementById('pg-wrap');
+    if (!window.ForceGraph) { statusEl.textContent = 'could not load the graph library — try a refresh.'; return; }
     function fit() { var nav = document.querySelector('nav'); if (nav) wrap.style.top = nav.offsetHeight + 'px'; }
     window.addEventListener('load', fit); window.addEventListener('resize', fit); fit();
 
-    var PALETTE = ['#e0b34e','#3fae74','#3f78d8','#e0502a','#c3a0e8','#8fc7e0',
-                   '#e8b7a0','#9ad9a0','#d8b04e','#d87ab0','#7ad8c0','#5f6070'];
+    var TYPE_COLORS = { person:'#4a9eff', organization:'#14b8a6', business:'#14b8a6', institution:'#a855f7',
+      gov_body:'#ef4444', government:'#ef4444', agency:'#ef4444', committee:'#f59e0b', pac:'#f97316',
+      party:'#f97316', fund:'#6366f1' };
+    function nodeColor(t) { return TYPE_COLORS[t] || '#8fa0b0'; }
+    var REL_COLORS = { FUNDS:'#22c55e', RECEIVES_GRANT:'#22c55e', ALLOCATED_TO:'#22c55e', LOBBIES:'#f59e0b',
+      APPROVED_BY_CIVIC:'#f59e0b', INFLUENCES:'#a855f7', CONTROLS:'#ef4444', AUTHORED_BY:'#6366f1',
+      HOLDS:'#14b8a6', RECEIVES_CONTRACT:'#4a9eff' };
+    function relColor(r) { return REL_COLORS[r] || '#667089'; }
+    function fmtAmt(v) { if (!v) return ''; var a = Math.abs(v);
+      if (a >= 1e9) return '$' + (v/1e9).toFixed(1) + 'B'; if (a >= 1e6) return '$' + (v/1e6).toFixed(1) + 'M';
+      if (a >= 1e3) return '$' + (v/1e3).toFixed(0) + 'K'; return '$' + v.toFixed(0); }
 
-    fetch('/assets/powergraph-20k.json').then(function (r) { return r.json(); }).then(function (data) {
-      var graph = new GraphCtor({ type: 'undirected' });
-      data.nodes.forEach(function (n, i) {
-        graph.addNode(i, {
-          x: n.x, y: -n.y, size: n.s, label: n.n,
-          color: PALETTE[n.c] || PALETTE[11], ntype: n.t
-        });
+    fetch('/assets/powergraph-explore.json').then(function (r) { return r.json(); }).then(function (data) {
+      var RT = data.reltypes;
+      // master node objects (reused so force-graph keeps positions across expansions)
+      var NODE = data.nodes.map(function (n, i) {
+        return { id: i, name: n.n, type: n.t, pr: n.pr, val: n.s, deg: n.d, color: nodeColor(n.t) };
       });
+      // adjacency: node -> [{j, rel, amt}]
+      var adj = data.nodes.map(function () { return []; });
       var E = data.edges;
-      for (var k = 0; k < E.length; k += 2) {
-        try { graph.addEdge(E[k], E[k + 1]); } catch (e) { /* dupe guard */ }
+      for (var k = 0; k < E.length; k++) {
+        var a = E[k][0], b = E[k][1], rel = RT[E[k][2]], amt = E[k][3];
+        adj[a].push({ j: b, rel: rel, amt: amt }); adj[b].push({ j: a, rel: rel, amt: amt });
       }
-      document.getElementById('pg-ec').textContent = (E.length / 2).toLocaleString();
+      // sort each node's neighbors by neighbor influence (for nicer expansion + panel order)
+      adj.forEach(function (list) { list.sort(function (x, y) { return NODE[y.j].val - NODE[x.j].val; }); });
 
-      var renderer = new SigmaCtor(graph, document.getElementById('pg-graph'), {
-        defaultEdgeColor: 'rgba(150,140,120,0.10)',
-        labelFont: "'Courier New', monospace",
-        labelColor: { color: '#e9dfc6' },
-        labelSize: 12,
-        labelWeight: '600',
-        labelRenderedSizeThreshold: 7,
-        zIndex: true,
-        minCameraRatio: 0.03,
-        maxCameraRatio: 2.5
-      });
-      var camera = renderer.getCamera();
-      statusEl.classList.add('gone');
-
-      var state = { hovered: null, neighbors: new Set() };
-      var infoEl = document.getElementById('pg-info');
-
-      function showInfo(node) {
-        var a = graph.getNodeAttributes(node);
-        infoEl.querySelector('.nm').textContent = a.label;
-        infoEl.querySelector('.mt').innerHTML =
-          (a.ntype ? '<b>' + a.ntype + '</b> · ' : '') + graph.degree(node).toLocaleString() + ' connections';
-        infoEl.classList.add('on');
+      var vis = new Set();            // visible node ids
+      var linkKey = {};               // dedupe visible links
+      var links = [];
+      function addLinksFor(i) {
+        adj[i].forEach(function (e) {
+          if (!vis.has(e.j)) return;
+          var lo = Math.min(i, e.j), hi = Math.max(i, e.j), key = lo + '-' + hi + '-' + e.rel;
+          if (linkKey[key]) return; linkKey[key] = 1;
+          links.push({ source: lo, target: hi, rel: e.rel, amt: e.amt, color: relColor(e.rel) });
+        });
       }
-      function clearInfo() { if (!state.hovered) infoEl.classList.remove('on'); }
-
-      renderer.setSetting('nodeReducer', function (node, d) {
-        if (state.hovered && node !== state.hovered && !state.neighbors.has(node)) {
-          return Object.assign({}, d, { color: '#20202a', label: '', zIndex: 0 });
-        }
-        if (state.hovered && node === state.hovered) {
-          return Object.assign({}, d, { zIndex: 2, highlighted: true });
-        }
-        return d;
-      });
-      renderer.setSetting('edgeReducer', function (edge, d) {
-        if (state.hovered && !graph.hasExtremity(edge, state.hovered)) {
-          return Object.assign({}, d, { hidden: true });
-        }
-        if (state.hovered) return Object.assign({}, d, { color: 'rgba(224,179,78,0.35)', zIndex: 1 });
-        return d;
-      });
-
-      function focus(node) {
-        state.hovered = node;
-        state.neighbors = new Set(graph.neighbors(node));
-        showInfo(node);
-        renderer.refresh();
+      function show(i, near) {
+        if (vis.has(i)) return;
+        if (near && NODE[near].x != null) { NODE[i].x = NODE[near].x + (Math.random()-.5)*40; NODE[i].y = NODE[near].y + (Math.random()-.5)*40; }
+        vis.add(i); addLinksFor(i);
       }
-      renderer.on('enterNode', function (e) { focus(e.node); });
-      renderer.on('leaveNode', function () { state.hovered = null; state.neighbors = new Set(); clearInfo(); renderer.refresh(); });
-      renderer.on('clickNode', function (e) {
-        var p = renderer.getNodeDisplayData(e.node);
-        camera.animate({ x: p.x, y: p.y, ratio: Math.min(camera.ratio, 0.08) }, { duration: 600 });
-        focus(e.node);
+      function expand(i, cap) {
+        var added = 0; cap = cap || 22;
+        for (var t = 0; t < adj[i].length && added < cap; t++) { if (!vis.has(adj[i][t].j)) { show(adj[i][t].j, i); added++; } }
+        // connect newly-visible among themselves
+        vis.forEach(function (v) { addLinksFor(v); });
+        sync();
+      }
+
+      // seed: the top hubs + their mutual links
+      for (var i = 0; i < 22; i++) vis.add(i);
+      vis.forEach(function (v) { addLinksFor(v); });
+
+      var Graph = ForceGraph()(document.getElementById('pg-graph'))
+        .backgroundColor('#0b0b11')
+        .nodeRelSize(1)
+        .nodeVal('val')
+        .nodeColor('color')
+        .nodeLabel(function (n) { return n.name; })
+        .linkColor(function (l) { return hoverId == null && selId == null ? 'rgba(150,150,170,0.12)' : l.color; })
+        .linkWidth(function (l) { return l.amt ? 1.6 : 0.6; })
+        .linkDirectionalParticles(0)
+        .cooldownTicks(80)
+        .onNodeHover(function (n) { hoverId = n ? n.id : null; })
+        .onNodeRightClick(function (n) { expand(n.id); })
+        .onBackgroundClick(function () { closePanel(); });
+
+      // click = select, quick double-click = expand
+      var lastClick = { id: null, t: 0 };
+      Graph.onNodeClick(function (n) {
+        var now = Date.now();
+        if (lastClick.id === n.id && now - lastClick.t < 320) { expand(n.id); }
+        else { select(n.id); }
+        lastClick = { id: n.id, t: now };
+        centerOn(n.id);
       });
 
+      Graph.d3Force('charge').strength(-140);
+      Graph.d3Force('link').distance(46);
+
+      var hoverId = null, selId = null;
+
+      // custom node paint: circle + label for hubs / selected / hovered
+      Graph.nodeCanvasObject(function (n, ctx, scale) {
+        var r = Math.max(1.5, Math.sqrt(n.val) * 1.6);
+        var dim = (selId != null && n.id !== selId && !isNeighbor(selId, n.id));
+        ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, 6.2832);
+        ctx.fillStyle = dim ? 'rgba(120,120,135,0.35)' : n.color; ctx.fill();
+        if (n.id === selId) { ctx.lineWidth = 2 / scale; ctx.strokeStyle = '#e0b34e'; ctx.stroke(); }
+        var showLabel = n.id === selId || n.id === hoverId || (n.val > 11 && scale > 0.7) || scale > 2.4;
+        if (showLabel && !dim) {
+          var f = Math.max(3.5, 11 / scale);
+          ctx.font = f + "px 'Courier New', monospace";
+          ctx.fillStyle = '#e9dfc6'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+          ctx.fillText(n.name.length > 34 ? n.name.slice(0, 33) + '…' : n.name, n.x + r + 2 / scale, n.y);
+        }
+      });
+      function isNeighbor(a, b) { for (var t = 0; t < adj[a].length; t++) if (adj[a][t].j === b) return true; return false; }
+
+      function sync() {
+        Graph.graphData({ nodes: Array.from(vis).map(function (i) { return NODE[i]; }), links: links });
+        document.getElementById('pg-shown').textContent = vis.size.toLocaleString();
+      }
+      function centerOn(i) { if (NODE[i].x != null) Graph.centerAt(NODE[i].x, NODE[i].y, 500); }
+
+      // ---- entity panel ----
+      var panel = document.getElementById('pg-panel'), pc = document.getElementById('pg-pc');
+      document.getElementById('pg-x').addEventListener('click', closePanel);
+      function closePanel() { panel.classList.remove('on'); selId = null; }
+      function select(i) {
+        selId = i; var n = NODE[i];
+        var groups = {};
+        adj[i].forEach(function (e) { (groups[e.rel] = groups[e.rel] || []).push(e); });
+        var order = Object.keys(groups).sort(function (a, b) { return groups[b].length - groups[a].length; });
+        var html = '';
+        html += '<span class="badge2" style="background:' + n.color + '">Actor</span>';
+        if (n.type) html += '<span class="ptype">' + n.type + '</span>';
+        html += '<h2>' + esc(n.name) + '</h2>';
+        html += '<div class="metrics"><div><b>' + n.deg.toLocaleString() + '</b><span>connections</span></div>'
+             + '<div><b>' + n.pr.toFixed(2) + '</b><span>PageRank</span></div></div>';
+        html += '<div class="sect"><div class="sect-h">Power flows (' + adj[i].length.toLocaleString() + ')</div>';
+        order.forEach(function (rel) {
+          var arr = groups[rel];
+          html += '<div class="rel-group"><div class="rel-lbl" style="border-left-color:' + relColor(rel) + '">'
+               + rel.replace(/_/g, ' ') + ' (' + arr.length + ')</div>';
+          arr.slice(0, 7).forEach(function (e) {
+            var m = fmtAmt(e.amt);
+            html += '<button class="flow" data-j="' + e.j + '"><span class="dot" style="background:' + nodeColor(NODE[e.j].type) + '"></span>'
+                 + '<span class="fn">' + esc(NODE[e.j].name) + '</span>'
+                 + (m ? '<span class="amt">' + m + '</span>' : '') + '</button>';
+          });
+          if (arr.length > 7) html += '<div class="more">+ ' + (arr.length - 7) + ' more</div>';
+          html += '</div>';
+        });
+        html += '</div>';
+        html += '<button class="expand-btn" id="pg-expand">Expand this neighborhood →</button>';
+        pc.innerHTML = html;
+        pc.querySelectorAll('.flow').forEach(function (b) {
+          b.addEventListener('click', function () { var j = +b.getAttribute('data-j'); navigate(j); });
+        });
+        document.getElementById('pg-expand').addEventListener('click', function () { expand(i); });
+        panel.classList.add('on');
+        sync();
+      }
+      function navigate(j) { show(j, selId); vis.forEach(function (v) { addLinksFor(v); }); sync(); select(j); centerOn(j); }
+      function esc(s) { return String(s).replace(/[&<>]/g, function (c) { return { '&':'&amp;','<':'&lt;','>':'&gt;' }[c]; }); }
+
+      // search
       var q = document.getElementById('pg-q');
       function runSearch() {
-        var s = q.value.trim().toLowerCase();
-        if (!s) return;
-        var best = null, bestDeg = -1;
-        graph.forEachNode(function (n, a) {
-          if (a.label && a.label.toLowerCase().indexOf(s) !== -1) {
-            var dg = graph.degree(n); if (dg > bestDeg) { bestDeg = dg; best = n; }
-          }
-        });
-        if (best != null) {
-          var p = renderer.getNodeDisplayData(best);
-          camera.animate({ x: p.x, y: p.y, ratio: 0.06 }, { duration: 700 });
-          focus(best);
+        var s = q.value.trim().toLowerCase(); if (!s) return;
+        var best = null, bd = -1;
+        for (var i = 0; i < NODE.length; i++) {
+          if (NODE[i].name.toLowerCase().indexOf(s) !== -1 && NODE[i].deg > bd) { bd = NODE[i].deg; best = i; }
         }
+        if (best != null) { show(best, null); vis.forEach(function (v) { addLinksFor(v); }); sync();
+          setTimeout(function () { select(best); centerOn(best); Graph.zoom(2.2, 600); }, 40); }
       }
       q.addEventListener('change', runSearch);
       q.addEventListener('keydown', function (e) { if (e.key === 'Enter') runSearch(); });
+
+      sync();
+      statusEl.classList.add('gone');
+      setTimeout(function () { Graph.zoomToFit(600, 60); }, 500);
     }).catch(function (err) {
       statusEl.classList.remove('gone');
       statusEl.textContent = 'could not load the graph data — try a refresh.';

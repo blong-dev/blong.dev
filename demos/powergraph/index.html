@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <title>World Power Graph — blong.dev</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="description" content="Navigate a public-data knowledge graph — click any entity to pull in who it funds, lobbies, controls, and contracts with. 20,000 of the most-connected entities.">
+  <meta name="description" content="Navigate a public-data knowledge graph — click any entity to pull in who it funds, lobbies, controls, and contracts with.">
   <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="icon" type="image/png" href="/favicon.png">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
@@ -13,271 +13,322 @@
   <script src="/site.js" defer></script>
   <script src="https://cdn.jsdelivr.net/npm/force-graph@1"></script>
   <style>
+    /* Power Flow Map — ported from the gnosis operator dashboard. Its own dark theme. */
     footer{display:none;}
     body{overflow:hidden;}
-    #pg-wrap{position:fixed;left:0;right:0;bottom:0;top:54px;background:#0b0b11;overflow:hidden;}
-    #pg-graph{position:absolute;inset:0;}
-    .pg-panel{position:absolute;z-index:5;font-family:'Courier New',monospace;color:var(--parchment);}
-    #pg-head{top:16px;left:18px;max-width:min(42ch,72vw);pointer-events:none;}
-    #pg-head h1{font-size:1.05rem;letter-spacing:1px;color:var(--gold);margin:0 0 6px;text-transform:uppercase;}
-    #pg-head p{font-size:.76rem;line-height:1.5;color:var(--parchment-dim);margin:0;}
-    #pg-search{top:16px;right:18px;}
-    #pg-search input{background:rgba(20,20,27,.92);border:1px solid var(--line);border-radius:99px;
-      color:var(--parchment);font-family:inherit;font-size:.82rem;padding:8px 15px;width:min(240px,50vw);outline:none;}
-    #pg-search input:focus{border-color:var(--gold);}
-    #pg-hint{bottom:16px;left:18px;font-size:.68rem;color:var(--parchment-dim);line-height:1.6;
-      background:rgba(11,11,17,.72);border:1px solid var(--line);border-radius:8px;padding:9px 13px;}
-    #pg-hint b{color:var(--parchment);font-weight:normal;}
-    #pg-count{bottom:16px;right:18px;font-size:.68rem;color:var(--parchment-dim);
-      background:rgba(11,11,17,.72);border:1px solid var(--line);border-radius:8px;padding:9px 13px;}
-    #pg-count b{color:var(--gold);font-weight:normal;}
+    #map{position:fixed;left:0;right:0;bottom:0;top:54px;background:#0a0a0a;overflow:hidden;
+      font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;}
+    #graph{position:absolute;inset:0;}
 
-    /* gnosis-style slide-in entity panel */
-    #pg-panel{top:0;right:0;height:100%;width:min(360px,86vw);background:rgba(15,15,21,.97);
-      border-left:1px solid var(--gold);box-shadow:-18px 0 50px rgba(0,0,0,.55);
-      transform:translateX(100%);transition:transform .32s cubic-bezier(.2,.8,.2,1);
-      overflow-y:auto;z-index:8;}
-    #pg-panel.on{transform:translateX(0);}
-    #pg-x{position:absolute;top:12px;right:14px;background:none;border:none;color:var(--parchment-dim);
-      font-size:24px;line-height:1;cursor:pointer;font-family:inherit;}
-    #pg-x:hover{color:var(--red);}
-    .pc{padding:26px 22px 40px;}
-    .pc .badge2{display:inline-block;font-size:.6rem;letter-spacing:1px;text-transform:uppercase;
-      color:#0b0b11;border-radius:99px;padding:2px 9px;font-weight:bold;}
-    .pc .ptype{color:var(--parchment-dim);font-size:.72rem;margin-left:8px;text-transform:uppercase;letter-spacing:1px;}
-    .pc h2{font-family:Georgia,serif;font-size:1.35rem;color:var(--parchment);margin:12px 0 0;line-height:1.2;word-break:break-word;}
-    .pc .metrics{display:flex;gap:26px;margin:18px 0 6px;border-top:1px solid var(--line);padding-top:16px;}
-    .pc .metrics b{display:block;font-size:1.15rem;color:var(--parchment);}
-    .pc .metrics span{font-size:.62rem;letter-spacing:1px;text-transform:uppercase;color:var(--parchment-dim);}
-    .pc .sect{margin-top:22px;}
-    .pc .sect-h{font-size:.66rem;letter-spacing:1.5px;text-transform:uppercase;color:var(--gold);margin-bottom:8px;}
-    .pc .rel-group{margin-bottom:12px;}
-    .pc .rel-lbl{font-size:.62rem;letter-spacing:.5px;text-transform:uppercase;color:var(--parchment-dim);
-      border-left:3px solid #444;padding-left:8px;margin-bottom:4px;}
-    .pc .flow{display:flex;align-items:center;gap:8px;width:100%;background:none;border:none;text-align:left;
-      color:var(--parchment);font-family:inherit;font-size:.8rem;padding:5px 6px;border-radius:5px;cursor:pointer;}
-    .pc .flow:hover{background:rgba(224,179,78,.10);}
-    .pc .flow .dot{width:8px;height:8px;border-radius:50%;flex:none;}
-    .pc .flow .fn{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-    .pc .flow .amt{color:#5ad07f;font-size:.72rem;}
-    .pc .more{font-size:.7rem;color:var(--parchment-dim);padding:3px 6px;}
-    .pc .expand-btn{margin-top:20px;width:100%;font-family:inherit;font-size:.8rem;letter-spacing:.5px;
-      color:var(--gold);background:none;border:1px solid var(--gold);border-radius:99px;padding:9px 0;cursor:pointer;}
-    .pc .expand-btn:hover{background:var(--gold);color:var(--obsidian);}
+    /* search (top-left) */
+    #search{position:absolute;top:16px;left:16px;z-index:10;width:320px;}
+    #search input{width:100%;box-sizing:border-box;background:rgba(20,20,20,.9);border:1px solid #333;
+      border-radius:8px;color:#e8e8e8;font-size:.85rem;padding:9px 13px;outline:none;
+      font-family:inherit;backdrop-filter:blur(8px);}
+    #search input:focus{border-color:#4a9eff;}
+    #sdrop{margin-top:6px;background:rgba(20,20,20,.97);border:1px solid #222;border-radius:8px;
+      overflow:hidden;box-shadow:0 12px 34px rgba(0,0,0,.5);display:none;}
+    #sdrop.on{display:block;}
+    #sdrop button{display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;border:none;
+      background:transparent;cursor:pointer;text-align:left;font-size:.8rem;color:#e8e8e8;font-family:inherit;}
+    #sdrop button:hover{background:#1a1a1a;}
+    #sdrop .dot{width:8px;height:8px;border-radius:50%;flex:none;}
+    #sdrop .lbl{color:#666;font-size:.72rem;}
 
-    #pg-status{position:absolute;inset:0;z-index:6;display:flex;align-items:center;justify-content:center;
-      font-family:'Courier New',monospace;color:var(--parchment-dim);font-size:.9rem;letter-spacing:1px;
-      background:#0b0b11;text-align:center;padding:20px;}
-    #pg-status.gone{display:none;}
-    @media(max-width:620px){ #pg-head{max-width:64vw;} #pg-hint,#pg-count{font-size:.6rem;} }
+    /* status (bottom-right) */
+    #status{position:absolute;bottom:16px;right:16px;z-index:10;color:#666;font-size:.75rem;
+      background:rgba(20,20,20,.85);padding:6px 12px;border-radius:6px;backdrop-filter:blur(8px);}
+
+    /* legend (top-right, left of panel) */
+    #legend{position:absolute;top:16px;right:16px;z-index:9;background:rgba(20,20,20,.85);border:1px solid #222;
+      border-radius:8px;padding:10px 14px;font-size:.7rem;color:#888;backdrop-filter:blur(8px);display:flex;gap:16px;
+      transition:right .32s cubic-bezier(.2,.8,.2,1);}
+    #legend.shift{right:416px;}
+    #legend .grp{display:flex;flex-direction:column;gap:3px;}
+    #legend .t{font-weight:600;color:#aaa;margin-bottom:2px;}
+    #legend .it{display:flex;align-items:center;gap:6px;}
+    #legend .d{width:8px;height:8px;border-radius:50%;flex:none;}
+    #legend .ln{width:12px;height:2px;border-radius:1px;flex:none;}
+    #hint{position:absolute;bottom:16px;left:16px;z-index:10;color:#555;font-size:.7rem;
+      background:rgba(20,20,20,.85);padding:6px 12px;border-radius:6px;backdrop-filter:blur(8px);}
+
+    /* entity panel (right slide-in) — gnosis EntityPanel styles */
+    #panel{position:absolute;top:0;right:0;bottom:0;width:400px;max-width:88vw;background:rgba(20,20,20,.95);
+      border-left:1px solid #222;z-index:20;overflow:hidden;backdrop-filter:blur(12px);
+      transform:translateX(100%);transition:transform .34s cubic-bezier(.2,.8,.2,1);}
+    #panel.on{transform:translateX(0);}
+    #panel .x{position:absolute;top:12px;right:12px;background:none;border:none;color:#888;font-size:1.5rem;
+      cursor:pointer;z-index:1;line-height:1;}
+    #panel .x:hover{color:#e8e8e8;}
+    #panel .content{height:100%;overflow-y:auto;padding:16px 0;}
+    #panel .hd{padding:0 20px 16px;border-bottom:1px solid #222;}
+    #panel .badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.7rem;font-weight:600;color:#fff;margin-right:8px;}
+    #panel .ptype{color:#666;font-size:.75rem;}
+    #panel .nm{color:#e8e8e8;font-size:1.3rem;font-weight:600;margin:8px 0 4px;word-break:break-word;}
+    #panel .sect{padding:12px 20px;border-bottom:1px solid #1a1a1a;}
+    #panel .sect-t{color:#888;font-size:.75rem;font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;}
+    #panel .mgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+    #panel .mgrid .ml{color:#666;font-size:.7rem;}
+    #panel .mgrid .mv{color:#e8e8e8;font-size:1rem;font-weight:600;}
+    #panel .relh{color:#aaa;font-size:.8rem;font-weight:500;padding-left:8px;border-left:2px solid #444;margin:10px 0 4px;}
+    #panel .flow{display:flex;align-items:center;gap:8px;width:100%;padding:4px 12px;border:none;background:transparent;
+      cursor:pointer;text-align:left;font-size:.8rem;color:#e8e8e8;font-family:inherit;border-radius:4px;}
+    #panel .flow:hover{background:#1a1a1a;}
+    #panel .flow .fdot{width:6px;height:6px;border-radius:50%;flex:none;}
+    #panel .flow .fn{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    #panel .flow .amt{color:#22c55e;font-size:.75rem;}
+    #panel .acts{padding:16px 20px;}
+    #panel .expand{width:100%;padding:10px 16px;background:#1a1a2a;border:1px solid #333;border-radius:8px;
+      color:#4a9eff;font-size:.85rem;font-weight:500;cursor:pointer;font-family:inherit;}
+    #panel .expand:hover{background:#22223a;}
+
+    #loading{position:absolute;inset:0;z-index:30;display:flex;align-items:center;justify-content:center;
+      background:#0a0a0a;color:#4a9eff;font-size:.9rem;font-family:-apple-system,sans-serif;}
+    #loading.gone{display:none;}
+    @media(max-width:620px){ #search{width:60vw;} #legend{display:none;} }
   </style>
 </head>
 <body>
-  <div id="pg-wrap">
-    <div id="pg-graph"></div>
+  <div id="map">
+    <div id="graph"></div>
 
-    <div id="pg-head" class="pg-panel">
-      <h1>World Power Graph</h1>
-      <p>The most-connected entities from a knowledge graph I built out of the public record. Click any node to pull in who it funds, lobbies, controls, and contracts with.</p>
+    <div id="search"><input id="sq" type="text" placeholder="Search entities…" autocomplete="off" spellcheck="false"><div id="sdrop"></div></div>
+
+    <div id="legend">
+      <div class="grp"><div class="t">Nodes</div>
+        <div class="it"><span class="d" style="background:#4a9eff"></span>Person</div>
+        <div class="it"><span class="d" style="background:#14b8a6"></span>Organization</div>
+        <div class="it"><span class="d" style="background:#ef4444"></span>Government</div>
+        <div class="it"><span class="d" style="background:#6366f1"></span>Fund</div>
+        <div class="it"><span class="d" style="background:#f97316"></span>PAC</div>
+        <div class="it"><span class="d" style="background:#f59e0b"></span>Committee</div>
+      </div>
+      <div class="grp"><div class="t">Edges</div><div id="legend-edges"></div></div>
     </div>
 
-    <div id="pg-search" class="pg-panel">
-      <input id="pg-q" type="search" placeholder="search an entity…" autocomplete="off" spellcheck="false">
-    </div>
+    <div id="hint">click a node for details · double-click to expand</div>
+    <div id="status">—</div>
 
-    <div id="pg-hint" class="pg-panel">
-      <b>click</b> a node for details · <b>double-click</b> to expand<br><b>drag</b> to pan · <b>scroll</b> to zoom
-    </div>
-    <div id="pg-count" class="pg-panel"><b id="pg-shown">0</b> shown · 20,000 in the graph</div>
+    <aside id="panel"><button class="x" aria-label="close">&times;</button><div class="content" id="pcontent"></div></aside>
 
-    <aside id="pg-panel">
-      <button id="pg-x" aria-label="close">&times;</button>
-      <div class="pc" id="pg-pc"></div>
-    </aside>
-
-    <div id="pg-status">loading the graph…</div>
+    <div id="loading">Loading…</div>
   </div>
 
   <script>
   (function () {
-    var statusEl = document.getElementById('pg-status');
-    var wrap = document.getElementById('pg-wrap');
-    if (!window.ForceGraph) { statusEl.textContent = 'could not load the graph library — try a refresh.'; return; }
-    function fit() { var nav = document.querySelector('nav'); if (nav) wrap.style.top = nav.offsetHeight + 'px'; }
+    var SEED_N = 150, EXPAND_LIMIT = 50;
+    var loadingEl = document.getElementById('loading');
+    var mapEl = document.getElementById('map');
+    if (!window.ForceGraph) { loadingEl.textContent = 'could not load the graph library — refresh.'; return; }
+    function fit() { var nav = document.querySelector('nav'); if (nav) mapEl.style.top = nav.offsetHeight + 'px'; }
     window.addEventListener('load', fit); window.addEventListener('resize', fit); fit();
 
-    var TYPE_COLORS = { person:'#4a9eff', organization:'#14b8a6', business:'#14b8a6', institution:'#a855f7',
-      gov_body:'#ef4444', government:'#ef4444', agency:'#ef4444', committee:'#f59e0b', pac:'#f97316',
-      party:'#f97316', fund:'#6366f1' };
-    function nodeColor(t) { return TYPE_COLORS[t] || '#8fa0b0'; }
-    var REL_COLORS = { FUNDS:'#22c55e', RECEIVES_GRANT:'#22c55e', ALLOCATED_TO:'#22c55e', LOBBIES:'#f59e0b',
-      APPROVED_BY_CIVIC:'#f59e0b', INFLUENCES:'#a855f7', CONTROLS:'#ef4444', AUTHORED_BY:'#6366f1',
-      HOLDS:'#14b8a6', RECEIVES_CONTRACT:'#4a9eff' };
-    function relColor(r) { return REL_COLORS[r] || '#667089'; }
-    function fmtAmt(v) { if (!v) return ''; var a = Math.abs(v);
-      if (a >= 1e9) return '$' + (v/1e9).toFixed(1) + 'B'; if (a >= 1e6) return '$' + (v/1e6).toFixed(1) + 'M';
-      if (a >= 1e3) return '$' + (v/1e3).toFixed(0) + 'K'; return '$' + v.toFixed(0); }
+    // --- gnosis color maps (verbatim) ---
+    var LABEL_COLORS = { Actor:'#4a9eff', Indicator:'#22c55e', Claim:'#a855f7', Flow:'#f59e0b', Instrument:'#6366f1', Source:'#888888' };
+    var ACTOR_TYPE_COLORS = { person:'#4a9eff', organization:'#14b8a6', business:'#14b8a6', fund:'#6366f1',
+      gov_body:'#ef4444', government:'#ef4444', committee:'#f59e0b', pac:'#f97316', party:'#f97316' };
+    var REL_COLORS = { FUNDS:'#22c55e', LOBBIES:'#f59e0b', HOLDS:'#6366f1', CONTROLS:'#ef4444', INFLUENCES:'#a855f7',
+      RECEIVES_CONTRACT:'#14b8a6', RECEIVES_GRANT:'#06b6d4', OFFICER_OF:'#f97316' };
+    function lighten(hex, a) { var r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+      return 'rgb('+Math.min(255,r+a*255)+','+Math.min(255,g+a*255)+','+Math.min(255,b+a*255)+')'; }
+    function hexA(hex, o) { return hex + Math.round(o*255).toString(16).padStart(2,'0'); }
+    function fmtAmt(n) { if(n>=1e9)return (n/1e9).toFixed(1)+'B'; if(n>=1e6)return (n/1e6).toFixed(1)+'M'; if(n>=1e3)return (n/1e3).toFixed(0)+'K'; return n.toLocaleString(); }
+
+    // legend edges
+    var le=''; for (var rk in REL_COLORS) le += '<div class="it"><span class="ln" style="background:'+REL_COLORS[rk]+'"></span>'+rk.replace(/_/g,' ')+'</div>';
+    document.getElementById('legend-edges').innerHTML = le;
 
     fetch('/assets/powergraph-explore.json').then(function (r) { return r.json(); }).then(function (data) {
       var RT = data.reltypes;
-      // master node objects (reused so force-graph keeps positions across expansions)
+      // master node objects (reused so positions persist across expansions)
       var NODE = data.nodes.map(function (n, i) {
-        return { id: i, name: n.n, type: n.t, pr: n.pr, val: n.s, deg: n.d, color: nodeColor(n.t) };
+        var color = (n.t && ACTOR_TYPE_COLORS[n.t]) || LABEL_COLORS.Actor || '#888';
+        return { id: String(i), _i: i, name: n.n, label: 'Actor', type: n.t, degree: n.d, pagerank: n.pr, __color: color, __size: 6 };
       });
-      // adjacency: node -> [{j, rel, amt}]
       var adj = data.nodes.map(function () { return []; });
       var E = data.edges;
       for (var k = 0; k < E.length; k++) {
         var a = E[k][0], b = E[k][1], rel = RT[E[k][2]], amt = E[k][3];
         adj[a].push({ j: b, rel: rel, amt: amt }); adj[b].push({ j: a, rel: rel, amt: amt });
       }
-      // sort each node's neighbors by neighbor influence (for nicer expansion + panel order)
-      adj.forEach(function (list) { list.sort(function (x, y) { return NODE[y.j].val - NODE[x.j].val; }); });
+      adj.forEach(function (l) { l.sort(function (x, y) { return NODE[y.j].degree - NODE[x.j].degree; }); });
 
-      var vis = new Set();            // visible node ids
-      var linkKey = {};               // dedupe visible links
-      var links = [];
+      // --- graph state (mirrors useMapGraph) ---
+      var vis = new Set(), linkSet = {}, links = [], expanded = new Set();
       function addLinksFor(i) {
         adj[i].forEach(function (e) {
           if (!vis.has(e.j)) return;
-          var lo = Math.min(i, e.j), hi = Math.max(i, e.j), key = lo + '-' + hi + '-' + e.rel;
-          if (linkKey[key]) return; linkKey[key] = 1;
-          links.push({ source: lo, target: hi, rel: e.rel, amt: e.amt, color: relColor(e.rel) });
+          var lo = Math.min(i, e.j), hi = Math.max(i, e.j), key = lo + '|' + hi + '|' + e.rel;
+          if (linkSet[key]) return; linkSet[key] = 1;
+          links.push({ source: String(lo), target: String(hi), relType: e.rel, confidence: 0.5, amt: e.amt });
         });
       }
-      function show(i, near) {
-        if (vis.has(i)) return;
-        if (near && NODE[near].x != null) { NODE[i].x = NODE[near].x + (Math.random()-.5)*40; NODE[i].y = NODE[near].y + (Math.random()-.5)*40; }
-        vis.add(i); addLinksFor(i);
+      function flushSizes() { // gnosis flush(): sqrt-normalized degree -> 2..20
+        var ds = []; vis.forEach(function (i) { ds.push(NODE[i].degree || 0); });
+        var maxD = Math.max.apply(null, ds.concat([1])), pos = ds.filter(function (d) { return d > 0; });
+        var minD = pos.length ? Math.min.apply(null, pos.concat([maxD])) : 0;
+        vis.forEach(function (i) { var d = NODE[i].degree || 0, norm = maxD > minD ? (d - minD) / (maxD - minD) : 0.5;
+          NODE[i].__size = 2 + Math.sqrt(norm) * 18; });
       }
-      function expand(i, cap) {
-        var added = 0; cap = cap || 22;
-        for (var t = 0; t < adj[i].length && added < cap; t++) { if (!vis.has(adj[i][t].j)) { show(adj[i][t].j, i); added++; } }
-        // connect newly-visible among themselves
-        vis.forEach(function (v) { addLinksFor(v); });
-        sync();
+      function seed(n) { for (var i = 0; i < n && i < NODE.length; i++) vis.add(i); vis.forEach(addLinksFor); flushSizes(); }
+      function addNode(i, cx, cy) { if (vis.has(i)) return; NODE[i].x = (cx||0)+(Math.random()-.5)*5; NODE[i].y = (cy||0)+(Math.random()-.5)*5; vis.add(i); }
+      function expandNode(i) {
+        if (expanded.has(i)) { return; } expanded.add(i);
+        var c = NODE[i], cx = c.x || 0, cy = c.y || 0, added = 0;
+        for (var t = 0; t < adj[i].length && added < EXPAND_LIMIT; t++) { if (!vis.has(adj[i][t].j)) { addNode(adj[i][t].j, cx, cy); added++; } }
+        vis.forEach(addLinksFor); flushSizes(); sync();
       }
-
-      // seed: the top hubs + their mutual links
-      for (var i = 0; i < 22; i++) vis.add(i);
-      vis.forEach(function (v) { addLinksFor(v); });
-
-      var Graph = ForceGraph()(document.getElementById('pg-graph'))
-        .backgroundColor('#0b0b11')
-        .nodeRelSize(1)
-        .nodeVal('val')
-        .nodeColor('color')
-        .nodeLabel(function (n) { return n.name; })
-        .linkColor(function (l) { return hoverId == null && selId == null ? 'rgba(150,150,170,0.12)' : l.color; })
-        .linkWidth(function (l) { return l.amt ? 1.6 : 0.6; })
-        .linkDirectionalParticles(0)
-        .cooldownTicks(80)
-        .onNodeHover(function (n) { hoverId = n ? n.id : null; })
-        .onNodeRightClick(function (n) { expand(n.id); })
-        .onBackgroundClick(function () { closePanel(); });
-
-      // click = select, quick double-click = expand
-      var lastClick = { id: null, t: 0 };
-      Graph.onNodeClick(function (n) {
-        var now = Date.now();
-        if (lastClick.id === n.id && now - lastClick.t < 320) { expand(n.id); }
-        else { select(n.id); }
-        lastClick = { id: n.id, t: now };
-        centerOn(n.id);
-      });
-
-      Graph.d3Force('charge').strength(-140);
-      Graph.d3Force('link').distance(46);
-
-      var hoverId = null, selId = null;
-
-      // custom node paint: circle + label for hubs / selected / hovered
-      Graph.nodeCanvasObject(function (n, ctx, scale) {
-        var r = Math.max(1.5, Math.sqrt(n.val) * 1.6);
-        var dim = (selId != null && n.id !== selId && !isNeighbor(selId, n.id));
-        ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, 6.2832);
-        ctx.fillStyle = dim ? 'rgba(120,120,135,0.35)' : n.color; ctx.fill();
-        if (n.id === selId) { ctx.lineWidth = 2 / scale; ctx.strokeStyle = '#e0b34e'; ctx.stroke(); }
-        var showLabel = n.id === selId || n.id === hoverId || (n.val > 11 && scale > 0.7) || scale > 2.4;
-        if (showLabel && !dim) {
-          var f = Math.max(3.5, 11 / scale);
-          ctx.font = f + "px 'Courier New', monospace";
-          ctx.fillStyle = '#e9dfc6'; ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-          ctx.fillText(n.name.length > 34 ? n.name.slice(0, 33) + '…' : n.name, n.x + r + 2 / scale, n.y);
-        }
-      });
-      function isNeighbor(a, b) { for (var t = 0; t < adj[a].length; t++) if (adj[a][t].j === b) return true; return false; }
-
       function sync() {
         Graph.graphData({ nodes: Array.from(vis).map(function (i) { return NODE[i]; }), links: links });
-        document.getElementById('pg-shown').textContent = vis.size.toLocaleString();
+        document.getElementById('status').textContent = vis.size + ' nodes · ' + links.length + ' edges';
       }
-      function centerOn(i) { if (NODE[i].x != null) Graph.centerAt(NODE[i].x, NODE[i].y, 500); }
 
-      // ---- entity panel ----
-      var panel = document.getElementById('pg-panel'), pc = document.getElementById('pg-pc');
-      document.getElementById('pg-x').addEventListener('click', closePanel);
-      function closePanel() { panel.classList.remove('on'); selId = null; }
-      function select(i) {
-        selId = i; var n = NODE[i];
-        var groups = {};
-        adj[i].forEach(function (e) { (groups[e.rel] = groups[e.rel] || []).push(e); });
+      seed(SEED_N);
+
+      var selectedId = null, hoveredId = null, hoverNeighbors = null;
+
+      var Graph = ForceGraph()(document.getElementById('graph'))
+        .backgroundColor('#0a0a0a')
+        .nodeId('id')
+        .linkSource('source').linkTarget('target')
+        .cooldownTicks(300).cooldownTime(8000).warmupTicks(80)
+        .d3AlphaDecay(0.03).d3AlphaMin(0.005).d3VelocityDecay(0.5)
+        .enableNodeDrag(true)
+        .nodeCanvasObject(function (node, ctx, globalScale) {
+          var baseSize = node.__size || 6, size = baseSize / globalScale, color = node.__color || '#888';
+          var isSel = node.id === selectedId, isHov = node.id === hoveredId;
+          var dimmed = hoverNeighbors && !hoverNeighbors.has(node.id);
+          var x = node.x || 0, y = node.y || 0;
+          ctx.globalAlpha = dimmed ? 0.12 : 1.0;
+          ctx.beginPath(); ctx.arc(x, y, isHov ? size * 1.3 : size, 0, 6.2832);
+          ctx.fillStyle = isHov ? lighten(color, 0.3) : color; ctx.fill();
+          if (isSel) { ctx.strokeStyle = '#fff'; ctx.lineWidth = 2 / globalScale; ctx.stroke(); }
+          var showLabel = isHov || isSel || (!dimmed && globalScale > 0.8);
+          if (showLabel) {
+            var label = node.name.length > 24 ? node.name.slice(0, 22) + '…' : node.name;
+            var fs = Math.max(isHov ? 12 : 10, 3) / globalScale;
+            ctx.font = (isHov ? 'bold ' : '') + fs + "px -apple-system, sans-serif";
+            ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+            ctx.fillStyle = isHov ? '#fff' : 'rgba(232,232,232,0.7)';
+            ctx.fillText(label, x, y + size + 2 / globalScale);
+          }
+          ctx.globalAlpha = 1.0;
+        })
+        .nodePointerAreaPaint(function (node, color, ctx, globalScale) {
+          var size = ((node.__size || 6) + 4) / globalScale;
+          ctx.beginPath(); ctx.arc(node.x || 0, node.y || 0, size, 0, 6.2832); ctx.fillStyle = color; ctx.fill();
+        })
+        .linkColor(function () { return 'rgba(0,0,0,0)'; })
+        .linkCanvasObject(function (link, ctx, globalScale) {
+          var s = link.source, t = link.target; if (!s || !t || s.x == null || t.x == null) return;
+          var color = REL_COLORS[link.relType] || '#444';
+          var sid = s.id, tid = t.id;
+          var dimmed = hoverNeighbors && !hoverNeighbors.has(sid) && !hoverNeighbors.has(tid);
+          var hi = hoverNeighbors && (sid === hoveredId || tid === hoveredId);
+          var base = Math.max(0.15, (link.confidence || 0.5) * 0.6);
+          var op = dimmed ? 0.03 : hi ? Math.min(1, base * 2) : base;
+          ctx.beginPath(); ctx.moveTo(s.x, s.y); ctx.lineTo(t.x, t.y);
+          ctx.strokeStyle = hexA(color, op); ctx.lineWidth = (hi ? 2 : 1) / globalScale; ctx.stroke();
+          if (!dimmed) {
+            var dx = t.x - s.x, dy = t.y - s.y, ang = Math.atan2(dy, dx);
+            var alen = (hi ? 6 : 4) / globalScale, tsize = ((t.__size || 6)) / globalScale;
+            var ax = t.x - Math.cos(ang) * tsize, ay = t.y - Math.sin(ang) * tsize;
+            ctx.beginPath(); ctx.moveTo(ax, ay);
+            ctx.lineTo(ax - alen * Math.cos(ang - Math.PI/6), ay - alen * Math.sin(ang - Math.PI/6));
+            ctx.lineTo(ax - alen * Math.cos(ang + Math.PI/6), ay - alen * Math.sin(ang + Math.PI/6));
+            ctx.closePath(); ctx.fillStyle = hexA(color, op); ctx.fill();
+          }
+        })
+        .onNodeHover(function (node) {
+          hoveredId = node ? node.id : null;
+          if (!node) { hoverNeighbors = null; return; }
+          var nb = new Set([node.id]);
+          links.forEach(function (l) { var si = l.source.id || l.source, ti = l.target.id || l.target;
+            if (si === node.id) nb.add(ti); if (ti === node.id) nb.add(si); });
+          hoverNeighbors = nb;
+        })
+        .onNodeClick(handleNodeClick)
+        .onBackgroundClick(function () { closePanel(); });
+
+      Graph.d3Force('charge').strength(-30);
+      Graph.d3Force('link').distance(40);
+      setTimeout(function () { Graph.zoomToFit(400, 50); }, 2500);
+
+      // double-click detection (gnosis MapCanvas)
+      var lastT = 0, lastId = null, singleTimer = null;
+      function handleNodeClick(node) {
+        var now = Date.now();
+        if (lastId === node.id && now - lastT < 400) {
+          if (singleTimer) { clearTimeout(singleTimer); singleTimer = null; }
+          lastId = null; lastT = 0;
+          selectEntity(node.id); centerOn(node.id); expandNode(node._i);
+        } else {
+          lastId = node.id; lastT = now;
+          if (singleTimer) clearTimeout(singleTimer);
+          singleTimer = setTimeout(function () { singleTimer = null; selectEntity(node.id); }, 350);
+        }
+      }
+      function centerOn(id) { var n = NODE[+id]; if (n && n.x != null) { Graph.centerAt(n.x, n.y, 600); Graph.zoom(1.5, 600); } }
+
+      // --- entity panel (gnosis EntityPanel) ---
+      var panel = document.getElementById('panel'), pc = document.getElementById('pcontent'), legend = document.getElementById('legend');
+      document.querySelector('#panel .x').addEventListener('click', closePanel);
+      function closePanel() { panel.classList.remove('on'); legend.classList.remove('shift'); selectedId = null; }
+      function selectEntity(id) {
+        selectedId = id; var i = +id, n = NODE[i];
+        var flows = adj[i].map(function (e) { return { targetId: e.j, targetName: NODE[e.j].name, targetLabel: 'Actor', targetType: NODE[e.j].type, relType: e.rel, amt: e.amt }; });
+        var groups = {}; flows.forEach(function (f) { (groups[f.relType] = groups[f.relType] || []).push(f); });
         var order = Object.keys(groups).sort(function (a, b) { return groups[b].length - groups[a].length; });
-        var html = '';
-        html += '<span class="badge2" style="background:' + n.color + '">Actor</span>';
-        if (n.type) html += '<span class="ptype">' + n.type + '</span>';
-        html += '<h2>' + esc(n.name) + '</h2>';
-        html += '<div class="metrics"><div><b>' + n.deg.toLocaleString() + '</b><span>connections</span></div>'
-             + '<div><b>' + n.pr.toFixed(2) + '</b><span>PageRank</span></div></div>';
-        html += '<div class="sect"><div class="sect-h">Power flows (' + adj[i].length.toLocaleString() + ')</div>';
+        var h = '';
+        h += '<div class="hd"><span class="badge" style="background:' + (LABEL_COLORS.Actor) + '">Actor</span>'
+           + (n.type ? '<span class="ptype">' + esc(n.type) + '</span>' : '') + '<div class="nm">' + esc(n.name) + '</div></div>';
+        h += '<div class="sect"><div class="sect-t">Metrics</div><div class="mgrid">'
+           + '<div><div class="ml">Connections</div><div class="mv">' + n.degree.toLocaleString() + '</div></div>'
+           + '<div><div class="ml">PageRank</div><div class="mv">' + n.pagerank.toFixed(2) + '</div></div></div></div>';
+        h += '<div class="sect"><div class="sect-t">Power Flows (' + flows.length.toLocaleString() + ')</div>';
         order.forEach(function (rel) {
           var arr = groups[rel];
-          html += '<div class="rel-group"><div class="rel-lbl" style="border-left-color:' + relColor(rel) + '">'
-               + rel.replace(/_/g, ' ') + ' (' + arr.length + ')</div>';
-          arr.slice(0, 7).forEach(function (e) {
-            var m = fmtAmt(e.amt);
-            html += '<button class="flow" data-j="' + e.j + '"><span class="dot" style="background:' + nodeColor(NODE[e.j].type) + '"></span>'
-                 + '<span class="fn">' + esc(NODE[e.j].name) + '</span>'
-                 + (m ? '<span class="amt">' + m + '</span>' : '') + '</button>';
+          h += '<div class="relh" style="border-left-color:' + (REL_COLORS[rel] || '#444') + '">' + rel.replace(/_/g,' ') + ' (' + arr.length + ')</div>';
+          arr.forEach(function (f) {
+            var m = f.amt ? '$' + fmtAmt(f.amt) : '';
+            h += '<button class="flow" data-j="' + f.targetId + '"><span class="fdot" style="background:'
+              + ((f.targetType && ACTOR_TYPE_COLORS[f.targetType]) || LABEL_COLORS.Actor) + '"></span>'
+              + '<span class="fn">' + esc(f.targetName) + '</span>' + (m ? '<span class="amt">' + m + '</span>' : '') + '</button>';
           });
-          if (arr.length > 7) html += '<div class="more">+ ' + (arr.length - 7) + ' more</div>';
-          html += '</div>';
         });
-        html += '</div>';
-        html += '<button class="expand-btn" id="pg-expand">Expand this neighborhood →</button>';
-        pc.innerHTML = html;
-        pc.querySelectorAll('.flow').forEach(function (b) {
-          b.addEventListener('click', function () { var j = +b.getAttribute('data-j'); navigate(j); });
-        });
-        document.getElementById('pg-expand').addEventListener('click', function () { expand(i); });
-        panel.classList.add('on');
-        sync();
+        h += '</div>';
+        h += '<div class="acts"><button class="expand" id="pexpand">Expand Neighborhood</button></div>';
+        pc.innerHTML = h;
+        pc.scrollTop = 0;
+        pc.querySelectorAll('.flow').forEach(function (b) { b.addEventListener('click', function () { navigate(+b.getAttribute('data-j')); }); });
+        document.getElementById('pexpand').addEventListener('click', function () { expandNode(i); });
+        panel.classList.add('on'); legend.classList.add('shift');
       }
-      function navigate(j) { show(j, selId); vis.forEach(function (v) { addLinksFor(v); }); sync(); select(j); centerOn(j); }
+      function navigate(j) { if (!vis.has(j)) { addNode(j, NODE[+selectedId] && NODE[+selectedId].x, NODE[+selectedId] && NODE[+selectedId].y); vis.forEach(addLinksFor); flushSizes(); sync(); } expandNode(j); selectEntity(String(j)); centerOn(String(j)); }
       function esc(s) { return String(s).replace(/[&<>]/g, function (c) { return { '&':'&amp;','<':'&lt;','>':'&gt;' }[c]; }); }
 
-      // search
-      var q = document.getElementById('pg-q');
-      function runSearch() {
-        var s = q.value.trim().toLowerCase(); if (!s) return;
-        var best = null, bd = -1;
-        for (var i = 0; i < NODE.length; i++) {
-          if (NODE[i].name.toLowerCase().indexOf(s) !== -1 && NODE[i].deg > bd) { bd = NODE[i].deg; best = i; }
-        }
-        if (best != null) { show(best, null); vis.forEach(function (v) { addLinksFor(v); }); sync();
-          setTimeout(function () { select(best); centerOn(best); Graph.zoom(2.2, 600); }, 40); }
-      }
-      q.addEventListener('change', runSearch);
-      q.addEventListener('keydown', function (e) { if (e.key === 'Enter') runSearch(); });
+      // --- search (gnosis MapSearch) ---
+      var sq = document.getElementById('sq'), sdrop = document.getElementById('sdrop');
+      sq.addEventListener('input', function () {
+        var q = sq.value.trim().toLowerCase(); if (q.length < 2) { sdrop.classList.remove('on'); return; }
+        var res = [];
+        for (var i = 0; i < NODE.length && res.length < 200; i++) if (NODE[i].name.toLowerCase().indexOf(q) !== -1) res.push(i);
+        res.sort(function (a, b) { return NODE[b].degree - NODE[a].degree; }); res = res.slice(0, 8);
+        if (!res.length) { sdrop.classList.remove('on'); return; }
+        sdrop.innerHTML = res.map(function (i) { return '<button data-i="' + i + '"><span class="dot" style="background:'
+          + NODE[i].__color + '"></span><span class="fn">' + esc(NODE[i].name) + '</span><span class="lbl">Actor (' + NODE[i].degree + ')</span></button>'; }).join('');
+        sdrop.querySelectorAll('button').forEach(function (b) { b.addEventListener('click', function () {
+          var i = +b.getAttribute('data-i'); sq.value = NODE[i].name; sdrop.classList.remove('on');
+          if (!vis.has(i)) { addNode(i, 0, 0); vis.forEach(addLinksFor); flushSizes(); sync(); }
+          selectEntity(String(i)); centerOn(String(i)); expandNode(i);
+        }); });
+        sdrop.classList.add('on');
+      });
+      document.addEventListener('click', function (e) { if (!document.getElementById('search').contains(e.target)) sdrop.classList.remove('on'); });
 
       sync();
-      statusEl.classList.add('gone');
-      setTimeout(function () { Graph.zoomToFit(600, 60); }, 500);
-    }).catch(function (err) {
-      statusEl.classList.remove('gone');
-      statusEl.textContent = 'could not load the graph data — try a refresh.';
-      console.error(err);
-    });
+      loadingEl.classList.add('gone');
+    }).catch(function (err) { loadingEl.classList.remove('gone'); loadingEl.textContent = 'could not load the graph data — refresh.'; console.error(err); });
   })();
   </script>
 </body>

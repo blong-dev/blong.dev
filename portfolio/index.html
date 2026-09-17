@@ -33,7 +33,7 @@
               <div class="case-body" hidden>
                 <p><b>What it does</b> Public and private data comes in through an ingestion layer and lands in a knowledge graph and a time-series warehouse. A layer of autonomous agents works over that data and sends results to a live dashboard.</p>
                 <p><b>The infrastructure flex</b> Go services move work across a message bus. Agents never call each other directly, so <strong>every agent action is an event I can audit</strong>. Behind the bus are Postgres, Neo4j, Elasticsearch, and Redis, and about 4,900 automated tests. It all runs on <strong>two consumer desktops connected by a 10 GbE link</strong>. Most of the intelligence runs on local models, so the high-volume work doesn't cost me per token.</p>
-                <p><b>How it's operated</b> I set the direction and the platform does the rest. 28 agents and 67 services keep it running without me in the loop day to day.</p>
+                <p><b>How it's operated</b> I set the direction and the platform does the rest. 25 agents and 67 services keep it running without me in the loop day to day.</p>
               </div>
             </div>
           </div>
@@ -241,7 +241,7 @@
               <div class="card-cue">case study</div>
               <div class="case-body" hidden>
                 <p><b>What it does</b> A polyglot code-intelligence library — tree-sitter ASTs, cross-file symbol resolution, and LLM-generated findings and diffs. Auto-docs and senior-dev-style review that run on any codebase, not just mine.</p>
-                <p><b>The infrastructure flex</b> MIT-licensed, published on PyPI, 354 tests.</p>
+                <p><b>The infrastructure flex</b> MIT-licensed, published on PyPI, 391 tests.</p>
                 <p><b>The proof</b> <strong>F1 0.854 on a Type-4 semantic-clone benchmark</strong> — the hard case, where two functions do the same thing with no shared text.</p>
               </div>
             </div>

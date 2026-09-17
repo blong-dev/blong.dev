@@ -31,9 +31,9 @@
               <div class="one">The private, event-driven AI platform behind everything else here.</div>
               <div class="card-cue">case study</div>
               <div class="case-body" hidden>
-                <p><b>What it does</b> Public and private data flows through an ingestion layer into a knowledge graph and a time-series warehouse, where an autonomous agent layer reasons over it and ships results to a live dashboard.</p>
-                <p><b>The infrastructure flex</b> Go services move work across a message bus where <strong>every agent action is an auditable event</strong> — no agent calls another directly. Postgres, Neo4j, Elasticsearch, and Redis sit behind it, held together by ~2,200 automated tests. It runs on <strong>two consumer desktops over a 10&nbsp;GbE link</strong> — most of the intelligence is local, so there's no per-token bill for the volume work.</p>
-                <p><b>How it's operated</b> I set direction; the platform runs the loop — roughly two dozen agents and services keep it moving without me in the path.</p>
+                <p><b>What it does</b> Public and private data comes in through an ingestion layer and lands in a knowledge graph and a time-series warehouse. A layer of autonomous agents works over that data and sends results to a live dashboard.</p>
+                <p><b>The infrastructure flex</b> Go services move work across a message bus. Agents never call each other directly, so <strong>every agent action is an event I can audit</strong>. Behind the bus are Postgres, Neo4j, Elasticsearch, and Redis, and about 4,900 automated tests. It all runs on <strong>two consumer desktops connected by a 10 GbE link</strong>. Most of the intelligence runs on local models, so the high-volume work doesn't cost me per token.</p>
+                <p><b>How it's operated</b> I set the direction and the platform does the rest. 28 agents and 67 services keep it running without me in the loop day to day.</p>
               </div>
             </div>
           </div>
@@ -117,9 +117,9 @@
               <div class="one">One clean picture of the world fleet, from sources that all disagree.</div>
               <div class="card-cue">case study</div>
               <div class="case-body" hidden>
-                <p><b>What it does</b> 710,000 aircraft and 313,000 owners served at the edge — 1.25M entity relationships — assembled from dozens of aviation registries plus live position data.</p>
-                <p><b>The infrastructure flex</b> A React + Hono app on Cloudflare Workers, D1, and R2 — fast and cheap, with 435 tests. The volume isn't the hard part; making tail numbers, airframes, and type certificates <strong>agree across contradictory sources with no hand-curation</strong> is. That resolution layer is the product.</p>
-                <p><b>The agent angle</b> A Python pipeline normalizes every registry over the same platform bus into Postgres before the edge ever sees it — the workforce does the reconciliation.</p>
+                <p><b>What it does</b> 323,000 aircraft and 218,000 owners, with 324,000 ownership links between them, served from the edge. The data comes from 55 national aviation registries plus live position data.</p>
+                <p><b>The infrastructure flex</b> A React and Hono app on Cloudflare Workers, D1, and R2. It's fast and cheap to run, and it has 548 tests. The volume is manageable. The hard part is that the registries contradict each other on tail numbers, airframes, and type certificates, and they have to <strong>agree with no hand-curation</strong>. Most of the work went into that.</p>
+                <p><b>The agent angle</b> A Python pipeline normalizes every registry into Postgres before anything reaches the edge. It runs on the same platform bus as the rest of my projects, and the agents do the reconciliation.</p>
               </div>
             </div>
           </div>
@@ -127,12 +127,12 @@
             <div class="shot" style="background-image:url('/assets/portfolio/telekora.jpg')"></div>
             <div class="body">
               <div class="name">Telekora <span class="badge deployed">deployed</span></div>
-              <div class="one">Generate a whole course — slides, images, quizzes — from a prompt.</div>
+              <div class="one">Generate a whole course from a prompt, with slides, images, and quizzes.</div>
               <div class="card-cue">case study</div>
               <div class="case-body" hidden>
-                <p><b>What it does</b> A multi-tenant B2B LMS — "tools, not cards" — where each tenant brings their own model and builds full courses from a prompt.</p>
-                <p><b>The infrastructure flex</b> Per-tenant LLM keys are <strong>envelope-encrypted in Cloudflare Secrets Store</strong>, and course generation uses forced tool-use against a strict schema, so the output is always valid JSON — never a parsing gamble. A Hono API on Cloudflare Workers with D1, R2, and KV; Stripe billing, Google auth, a Telegram Mini App front end.</p>
-                <p><b>The agent angle</b> Course-building runs as a dedicated, metered, per-tenant generation step gated by a credit pool — productized AI, not a demo.</p>
+                <p><b>What it does</b> A multi-tenant B2B learning platform. Each tenant brings their own model and builds full courses from a prompt.</p>
+                <p><b>The infrastructure flex</b> Each tenant's LLM keys are <strong>envelope-encrypted in Cloudflare Secrets Store</strong>. Course generation uses forced tool-use against a strict schema, so the output is always valid JSON and I never have to parse free text. It's a Hono API on Cloudflare Workers with D1, R2, and KV. Billing is Stripe, login is Google, and there's a Telegram Mini App front end.</p>
+                <p><b>The agent angle</b> Course building runs as its own metered step for each tenant, drawn from a credit pool.</p>
               </div>
             </div>
           </div>
@@ -143,9 +143,9 @@
               <div class="one">Turning the public record into something you can actually search.</div>
               <div class="card-cue">case study</div>
               <div class="case-body" hidden>
-                <p><b>What it does</b> Council meetings, votes, and speaker-labeled transcripts, made searchable and readable.</p>
-                <p><b>The infrastructure flex</b> A React + Hono app on Cloudflare Workers over a civic corpus in D1.</p>
-                <p><b>The agent angle</b> The data lands through the <strong>same platform pipeline as everything else</strong>, as additive handlers — no separate stack to maintain. The hard part of civic data is sourcing and structuring it; the platform already does both.</p>
+                <p><b>What it does</b> Council meetings, votes, and transcripts with the speakers labeled, all searchable and readable.</p>
+                <p><b>The infrastructure flex</b> A React and Hono app on Cloudflare Workers, with the civic records in D1.</p>
+                <p><b>The agent angle</b> The data comes in through the <strong>same pipeline as everything else I run</strong>, so there's no separate stack to maintain. Finding civic data and giving it structure is the hard part, and the platform already does both.</p>
               </div>
             </div>
           </div>
@@ -195,9 +195,9 @@
               <div class="one">A public ledger where every person, agent, and thing owns proof of what it creates.</div>
               <div class="card-cue">case study</div>
               <div class="case-body" hidden>
-                <p><b>What it does</b> A public ledger where every person, organization, agent, or thing holds the permanent, verifiable record of what it creates. Your data is already yours; dreamtree is how you prove it — with no company in the middle who can revoke it.</p>
-                <p><b>The infrastructure flex</b> An L1 on Cosmos SDK + CometBFT with a novel <strong>attestation-as-work</strong> consensus: the network settles records by attesting to them, weighted by a reputation signal with asymmetric decay so bad actors fade and good ones compound. Records carry W3C signatures (eddsa-jcs-2022) and did:webvh identity, so they <strong>verify anywhere</strong>, not only inside dreamtree.</p>
-                <p><b>The build</b> Designed and built the whole stack solo — the chain modules (seeds, photons, attestation, reputation, licensing), the off-chain anchoring service, and roots, the wallet at the human edge. Running on private infrastructure.</p>
+                <p><b>What it does</b> A public ledger where anybody, or anything, can hold a permanent record of what it made and prove it. Your data is already yours. dreamtree is how you prove it, and there's no company in the middle who can take that away.</p>
+                <p><b>The infrastructure flex</b> It's an L1 built on Cosmos SDK and CometBFT. I wrote a consensus I call <strong>attestation-as-work</strong>, where the network settles a record by attesting to it. Attestations are weighted by reputation, and the decay is asymmetric, so bad actors lose influence over time and good ones gain it. Records carry W3C signatures (eddsa-jcs-2022) and did:webvh identity, so you can <strong>verify them anywhere</strong>.</p>
+                <p><b>The build</b> I designed and built the whole stack myself. That's the chain modules (seeds, photons, attestation, reputation, licensing), the off-chain anchoring service, and roots, which is the wallet people actually use. It runs on my own hardware.</p>
               </div>
             </div>
           </div>
